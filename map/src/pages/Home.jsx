@@ -52,8 +52,8 @@ export default function Home() {
 
       {!isAuthenticated && (
         <div className="mb-8 p-8 bg-gradient-to-r from-primary/90 to-secondary rounded-2xl text-white text-center">
-          <h2 className="text-3xl font-bold mb-3">开始你的博客之旅</h2>
-          <p className="text-lg opacity-90 mb-6">加入我们，分享你的想法和经验</p>
+          <h2 className="text-2xl md:text-3xl font-bold mb-3">开始你的博客之旅</h2>
+          <p className="text-base md:text-lg opacity-90 mb-6">加入我们，分享你的想法和经验</p>
           <div className="flex justify-center gap-4">
             <Link
               to="/register"

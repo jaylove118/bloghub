@@ -88,23 +88,23 @@ export default function BlogList() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
-        <h1 className="text-2xl font-bold">博客文章</h1>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+        <h1 className="text-2xl font-bold dark:text-white">博客文章</h1>
 
-        <form onSubmit={handleSearch} className="flex gap-2">
-          <div className="relative">
+        <form onSubmit={handleSearch} className="flex gap-2 w-full sm:w-auto">
+          <div className="relative flex-1 sm:flex-initial">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
             <input
               type="text"
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
               placeholder="搜索文章..."
-              className="pl-10 pr-4 py-2 w-64 border border-gray-200 rounded-full focus:outline-none focus:border-primary"
+              className="pl-10 pr-4 py-2 w-full sm:w-64 border border-gray-200 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-full focus:outline-none focus:border-primary"
             />
           </div>
           <button
             type="submit"
-            className="px-4 py-2 bg-primary text-white rounded-full hover:bg-secondary transition"
+            className="px-4 py-2 bg-primary text-white rounded-full hover:bg-secondary transition whitespace-nowrap"
           >
             搜索
           </button>
@@ -160,7 +160,7 @@ export default function BlogList() {
       {loading ? (
         <LoadingSpinner className="h-64" />
       ) : posts.length === 0 ? (
-        <div className="text-center py-16 bg-white rounded-2xl">
+        <div className="text-center py-16 bg-white dark:bg-gray-800 rounded-2xl">
           <p className="text-gray-500 mb-4">没有找到相关文章</p>
           {hasFilters && (
             <button
@@ -173,7 +173,7 @@ export default function BlogList() {
         </div>
       ) : (
         <>
-          <p className="text-gray-500 mb-4">共 {pagination.total} 篇文章</p>
+          <p className="text-gray-500 dark:text-gray-400 mb-4">共 {pagination.total} 篇文章</p>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {posts.map((post) => (
               <Link

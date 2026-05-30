@@ -204,24 +204,24 @@ export default function BlogDetail() {
 
           <h1 className="text-3xl md:text-4xl font-bold mb-4">{post.title}</h1>
 
-          <div className="flex flex-wrap items-center gap-4 mb-6 pb-6 border-b border-gray-100">
+          <div className="flex flex-wrap items-center gap-3 mb-6 pb-6 border-b border-gray-100 dark:border-gray-700">
             <Link to={`/profile/${author?.id}`} className="flex items-center gap-2">
               <img
                 src={author?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${author?.username}`}
                 alt={author?.username}
                 className="w-10 h-10 rounded-full"
               />
-              <span className="font-medium">{author?.username}</span>
+              <span className="font-medium dark:text-gray-200">{author?.username}</span>
             </Link>
-            <span className="flex items-center gap-1 text-gray-500 text-sm">
+            <span className="flex items-center gap-1 text-gray-500 dark:text-gray-400 text-sm">
               <Clock size={14} />
               {formatFullDate(post.createdAt)}
             </span>
-            <span className="flex items-center gap-1 text-gray-500 text-sm">
+            <span className="flex items-center gap-1 text-gray-500 dark:text-gray-400 text-sm">
               <Eye size={14} />
               {post.viewCount || 0} 阅读
             </span>
-            <span className="flex items-center gap-1 text-gray-500 text-sm">
+            <span className="flex items-center gap-1 text-gray-500 dark:text-gray-400 text-sm">
               <BookOpen size={14} />
               {readingTime(post.content)} 分钟
             </span>
@@ -229,13 +229,13 @@ export default function BlogDetail() {
 
           <div className="prose max-w-none mb-8" dangerouslySetInnerHTML={{ __html: parseMarkdown(post.content) }} />
 
-          <div className="flex items-center justify-between pt-6 border-t border-gray-100">
-            <div className="flex items-center gap-4">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pt-6 border-t border-gray-100 dark:border-gray-700">
+            <div className="flex items-center gap-2 sm:gap-4">
               <button
                 onClick={handleLike}
                 disabled={liking}
-                className={`flex items-center gap-1 px-4 py-2 rounded-full transition ${
-                  isLiked ? 'bg-red-50 text-red-500' : 'bg-gray-100 hover:bg-gray-200'
+                className={`flex items-center gap-1 px-3 sm:px-4 py-2 rounded-full text-sm transition ${
+                  isLiked ? 'bg-red-50 dark:bg-red-900/30 text-red-500' : 'bg-gray-100 dark:bg-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
                 }`}
               >
                 <Heart size={18} fill={isLiked ? 'currentColor' : 'none'} />
@@ -243,8 +243,8 @@ export default function BlogDetail() {
               </button>
               <button
                 onClick={handleFavorite}
-                className={`flex items-center gap-1 px-4 py-2 rounded-full transition ${
-                  isFavorited ? 'bg-amber-50 text-amber-500' : 'bg-gray-100 hover:bg-gray-200'
+                className={`flex items-center gap-1 px-3 sm:px-4 py-2 rounded-full text-sm transition ${
+                  isFavorited ? 'bg-amber-50 dark:bg-amber-900/30 text-amber-500' : 'bg-gray-100 dark:bg-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
                 }`}
               >
                 <Bookmark size={18} fill={isFavorited ? 'currentColor' : 'none'} />
@@ -253,30 +253,30 @@ export default function BlogDetail() {
             </div>
 
             {isAuthor && (
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <button
                   onClick={handlePin}
-                  className={`flex items-center gap-1 px-4 py-2 rounded-full transition ${
-                    post.isPinned ? 'bg-amber-50 text-amber-500' : 'bg-gray-100 hover:bg-gray-200'
+                  className={`flex items-center gap-1 px-3 py-2 rounded-full text-sm transition ${
+                    post.isPinned ? 'bg-amber-50 dark:bg-amber-900/30 text-amber-500' : 'bg-gray-100 dark:bg-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
                   }`}
                   title={post.isPinned ? '取消置顶' : '置顶'}
                 >
                   <Pin size={16} fill={post.isPinned ? 'currentColor' : 'none'} />
-                  {post.isPinned ? '已置顶' : '置顶'}
+                  <span className="hidden sm:inline">{post.isPinned ? '已置顶' : '置顶'}</span>
                 </button>
                 <Link
                   to={`/editor/${id}`}
-                  className="flex items-center gap-1 px-4 py-2 bg-gray-100 rounded-full hover:bg-gray-200 transition"
+                  className="flex items-center gap-1 px-3 py-2 bg-gray-100 dark:bg-gray-700 dark:text-gray-300 rounded-full hover:bg-gray-200 dark:hover:bg-gray-600 transition text-sm"
                 >
                   <Edit size={16} />
-                  编辑
+                  <span className="hidden sm:inline">编辑</span>
                 </Link>
                 <button
                   onClick={handleDelete}
-                  className="flex items-center gap-1 px-4 py-2 bg-red-50 text-red-500 rounded-full hover:bg-red-100 transition"
+                  className="flex items-center gap-1 px-3 py-2 bg-red-50 dark:bg-red-900/30 text-red-500 rounded-full hover:bg-red-100 dark:hover:bg-red-900/50 transition text-sm"
                 >
                   <Trash2 size={16} />
-                  删除
+                  <span className="hidden sm:inline">删除</span>
                 </button>
               </div>
             )}
