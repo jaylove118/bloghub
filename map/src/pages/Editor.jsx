@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { api, TOKEN_KEY } from '../context/api'
 import { useAuth } from '../context/AuthContext'
-import { ArrowLeft, Save, Eye, Image, X, RotateCcw, Check } from 'lucide-react'
+import { ArrowLeft, Eye, Image, X, RotateCcw, Check, FileText, Send, Bold, Italic, Code, Quote, List, Heading, Columns } from 'lucide-react'
 import { parseMarkdown } from '../lib/index'
 import { categoryOptions } from '../utils/constants'
 
@@ -42,18 +42,35 @@ export default function Editor() {
     excerpt: '',
     coverImage: '',
     category: 'tech',
-    tags: []
+    tags: [],
+    status: 'published'
   })
   const [tagInput, setTagInput] = useState('')
   const [loading, setLoading] = useState(false)
   const [preview, setPreview] = useState(false)
+  const [splitView, setSplitView] = useState(false)
   const [imageUploading, setImageUploading] = useState(false)
   const [showDraftBanner, setShowDraftBanner] = useState(false)
   const [draftSaved, setDraftSaved] = useState(false)
 
   const draftTimerRef = useRef(null)
+  const textareaRef = useRef(null)
   const formDataRef = useRef(formData)
   formDataRef.current = formData
+
+  const insertMarkdown = (prefix, suffix = '') => {
+    const ta = textareaRef.current
+    if (!ta) return
+    const start = ta.selectionStart
+    const end = ta.selectionEnd
+    const selected = formData.content.substring(start, end)
+    const newText = formData.content.substring(0, start) + prefix + selected + suffix + formData.content.substring(end)
+    handleChange({ content: newText })
+    setTimeout(() => {
+      ta.focus()
+      ta.selectionStart = ta.selectionEnd = start + prefix.length + selected.length + suffix.length
+    }, 0)
+  }
 
   const doSaveDraft = () => {
     const d = formDataRef.current
@@ -79,7 +96,8 @@ export default function Editor() {
             excerpt: post.excerpt || '',
             coverImage: post.coverImage || '',
             category: post.category,
-            tags: post.tags || []
+            tags: post.tags || [],
+            status: post.status || 'published'
           })
         }
       }
@@ -160,8 +178,8 @@ export default function Editor() {
     }
   }
 
-  const handleSubmit = async (e) => {
-    e.preventDefault()
+  const handleSubmit = async (e, publishStatus) => {
+    if (e) e.preventDefault()
     if (!formData.title.trim() || !formData.content.trim()) {
       alert('请填写标题和内容')
       return
@@ -171,23 +189,27 @@ export default function Editor() {
     try {
       const postData = {
         ...formData,
+        status: publishStatus,
         authorId: user.id,
         excerpt: formData.excerpt || formData.content.replace(/[#*`]/g, '').slice(0, 150)
       }
 
       if (isEditing) {
         await api.posts.update(id, postData)
+        navigate(`/blog/${id}`)
       } else {
         const newPost = await api.posts.create(postData)
         clearDraft()
-        navigate(`/blog/${newPost.id}`)
+        if (publishStatus === 'published') {
+          navigate(`/blog/${newPost.id}`)
+        } else {
+          navigate(`/editor/${newPost.id}`)
+        }
         return
       }
-      navigate(`/blog/${id}`)
     } catch (error) {
       console.error(error)
       alert('保存失败')
-      return
     } finally {
       setLoading(false)
     }
@@ -208,6 +230,9 @@ export default function Editor() {
               返回
             </Link>
             <h1 className="font-semibold">{isEditing ? '编辑文章' : '写文章'}</h1>
+            {formData.status === 'draft' && (
+              <span className="px-2 py-0.5 text-xs bg-amber-100 text-amber-700 rounded-full">草稿</span>
+            )}
             {draftSaved && (
               <span className="text-xs text-green-600 flex items-center gap-1">
                 <Check size={14} />
@@ -220,23 +245,36 @@ export default function Editor() {
               <button
                 type="button"
                 onClick={doSaveDraft}
-                className="px-3 py-2 text-sm text-gray-500 hover:text-gray-700 transition"
-                title="手动保存草稿"
+                className="px-3 py-2 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 transition"
+                title="手动保存草稿到本地"
               >
                 <RotateCcw size={16} />
               </button>
             )}
             <button
               type="button"
-              onClick={() => setPreview(!preview)}
+              onClick={() => {
+                if (!preview && !splitView) setPreview(true)
+                else if (preview && !splitView) { setPreview(false); setSplitView(true) }
+                else { setPreview(false); setSplitView(false) }
+              }}
               className={`px-4 py-2 rounded-full transition ${
-                preview ? 'bg-primary text-white' : 'bg-gray-100 hover:bg-gray-200'
+                preview || splitView ? 'bg-primary text-white' : 'bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600'
               }`}
+              title={!preview && !splitView ? '预览' : splitView ? '关闭分屏' : '分屏'}
             >
-              <Eye size={18} />
+              {splitView ? <Columns size={18} /> : <Eye size={18} />}
             </button>
             <button
-              onClick={handleSubmit}
+              onClick={(e) => handleSubmit(e, 'draft')}
+              disabled={loading}
+              className="px-4 py-2 text-gray-600 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-full hover:bg-gray-50 dark:hover:bg-gray-800 transition disabled:opacity-50 flex items-center gap-2"
+            >
+              <FileText size={18} />
+              存草稿
+            </button>
+            <button
+              onClick={(e) => handleSubmit(e, 'published')}
               disabled={loading}
               className="px-6 py-2 bg-primary text-white rounded-full hover:bg-secondary transition disabled:opacity-50 flex items-center gap-2"
             >
@@ -244,8 +282,8 @@ export default function Editor() {
                 <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
               ) : (
                 <>
-                  <Save size={18} />
-                  保存
+                  <Send size={18} />
+                  发布
                 </>
               )}
             </button>
@@ -406,18 +444,31 @@ export default function Editor() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">内容（支持 Markdown）</label>
-              <div className="border border-gray-200 rounded-xl overflow-hidden">
-                <div className="bg-gray-50 px-4 py-2 border-b border-gray-200 text-xs text-gray-500">
-                  使用 # 标题、**粗体**、*斜体*、`代码` 等 Markdown 语法
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">内容（支持 Markdown）</label>
+              <div className="border border-gray-200 dark:border-gray-600 rounded-xl overflow-hidden">
+                <div className="bg-gray-50 dark:bg-gray-800 px-2 py-1.5 border-b border-gray-200 dark:border-gray-600 flex items-center gap-1 flex-wrap">
+                  <button type="button" onClick={() => insertMarkdown('# ', '')} className="p-1.5 hover:bg-gray-200 dark:hover:bg-gray-700 rounded" title="标题"><Heading size={16} /></button>
+                  <button type="button" onClick={() => insertMarkdown('**', '**')} className="p-1.5 hover:bg-gray-200 dark:hover:bg-gray-700 rounded font-bold" title="粗体"><Bold size={16} /></button>
+                  <button type="button" onClick={() => insertMarkdown('*', '*')} className="p-1.5 hover:bg-gray-200 dark:hover:bg-gray-700 rounded italic" title="斜体"><Italic size={16} /></button>
+                  <button type="button" onClick={() => insertMarkdown('`', '`')} className="p-1.5 hover:bg-gray-200 dark:hover:bg-gray-700 rounded" title="行内代码"><Code size={16} /></button>
+                  <button type="button" onClick={() => insertMarkdown('> ', '')} className="p-1.5 hover:bg-gray-200 dark:hover:bg-gray-700 rounded" title="引用"><Quote size={16} /></button>
+                  <button type="button" onClick={() => insertMarkdown('- ', '')} className="p-1.5 hover:bg-gray-200 dark:hover:bg-gray-700 rounded" title="列表"><List size={16} /></button>
+                  <button type="button" onClick={() => insertMarkdown('[', '](url)')} className="p-1.5 hover:bg-gray-200 dark:hover:bg-gray-700 rounded" title="链接"><span className="text-xs font-mono">A</span></button>
+                  <span className="text-xs text-gray-400 dark:text-gray-500 ml-2">点击按钮插入格式，支持选中文本</span>
                 </div>
-                <textarea
-                  value={formData.content}
-                  onChange={(e) => handleChange({ content: e.target.value })}
-                  placeholder="开始写作..."
-                  maxLength={100000}
-                  className="w-full h-96 p-4 focus:outline-none resize-none font-mono"
-                />
+                <div className={`${splitView ? 'flex' : ''}`}>
+                  <textarea
+                    ref={textareaRef}
+                    value={formData.content}
+                    onChange={(e) => handleChange({ content: e.target.value })}
+                    placeholder="开始写作..."
+                    maxLength={100000}
+                    className={`${splitView ? 'w-1/2 border-r border-gray-200 dark:border-gray-600' : 'w-full'} h-96 p-4 focus:outline-none resize-none font-mono bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100`}
+                  />
+                  {splitView && (
+                    <div className="w-1/2 h-96 p-4 overflow-y-auto prose bg-gray-50 dark:bg-gray-800" dangerouslySetInnerHTML={{ __html: parseMarkdown(formData.content) || '<p class="text-gray-400">预览将在此显示...</p>' }} />
+                  )}
+                </div>
               </div>
               <p className="text-xs text-gray-400 mt-1 text-right">{formData.content.length}/100,000</p>
             </div>

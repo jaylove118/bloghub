@@ -12,6 +12,7 @@ const postValidation = validate({
   category: { required: true, max: 20 },
   excerpt: { max: 500 },
   coverImage: { max: 2000 },
+  status: { max: 10 },
 })
 
 function parseJsonFields(post) {
@@ -25,7 +26,7 @@ function parseJsonFields(post) {
 
 router.get('/', async (req, res, next) => {
   try {
-    const { category, tag, search, authorId, page, limit } = req.query
+    const { category, tag, search, authorId, page, limit, status } = req.query
     const pageNum = Math.max(1, parseInt(page) || 1)
     const limitNum = Math.min(50, Math.max(1, parseInt(limit) || 20))
     const offset = (pageNum - 1) * limitNum
@@ -48,6 +49,11 @@ router.get('/', async (req, res, next) => {
     if (tag) {
       where += ' AND JSON_CONTAINS(p.tags, ?)'
       params.push(JSON.stringify(tag))
+    }
+    if (status === 'draft') {
+      where += ' AND p.status = \'draft\''
+    } else {
+      where += ' AND p.status = \'published\''
     }
 
     const [countResult] = await pool.query(
@@ -104,11 +110,11 @@ router.get('/:id', async (req, res, next) => {
 
 router.post('/', authRequired, postValidation, async (req, res, next) => {
   try {
-    const { title, content, excerpt, category, coverImage, tags } = req.body
+    const { title, content, excerpt, category, coverImage, tags, status } = req.body
 
     const [result] = await pool.query(
-      'INSERT INTO posts (title, content, excerpt, category, cover_image, tags, author_id) VALUES (?, ?, ?, ?, ?, ?, ?)',
-      [title, content, excerpt || '', category, coverImage || '', JSON.stringify(tags || []), req.userId]
+      'INSERT INTO posts (title, content, excerpt, category, cover_image, tags, author_id, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+      [title, content, excerpt || '', category, coverImage || '', JSON.stringify(tags || []), req.userId, status === 'draft' ? 'draft' : 'published']
     )
 
     const [rows] = await pool.query(
@@ -125,7 +131,7 @@ router.post('/', authRequired, postValidation, async (req, res, next) => {
 router.put('/:id', authRequired, postValidation, async (req, res, next) => {
   try {
     const { id } = req.params
-    const { title, content, excerpt, category, coverImage, tags } = req.body
+    const { title, content, excerpt, category, coverImage, tags, status } = req.body
 
     const [existing] = await pool.query('SELECT * FROM posts WHERE id = ?', [id])
     if (existing.length === 0) {
@@ -135,9 +141,10 @@ router.put('/:id', authRequired, postValidation, async (req, res, next) => {
       throw AppError(403, '无权修改他人文章')
     }
 
+    const newStatus = status === 'draft' ? 'draft' : 'published'
     await pool.query(
-      'UPDATE posts SET title=?, content=?, excerpt=?, category=?, cover_image=?, tags=? WHERE id=?',
-      [title, content, excerpt || '', category, coverImage || '', JSON.stringify(tags || []), id]
+      'UPDATE posts SET title=?, content=?, excerpt=?, category=?, cover_image=?, tags=?, status=? WHERE id=?',
+      [title, content, excerpt || '', category, coverImage || '', JSON.stringify(tags || []), newStatus, id]
     )
 
     const [rows] = await pool.query(
@@ -225,6 +232,22 @@ router.post('/:id/favorite', authRequired, async (req, res, next) => {
     next(err)
   } finally {
     conn.release()
+  }
+})
+
+router.get('/tags/all', async (_req, res) => {
+  try {
+    const [rows] = await pool.query("SELECT tags FROM posts WHERE status = 'published'")
+    const counts = {}
+    rows.forEach(r => {
+      let tags = r.tags
+      if (typeof tags === 'string') { try { tags = JSON.parse(tags) } catch { tags = [] } }
+      (tags || []).forEach(t => { counts[t] = (counts[t] || 0) + 1 })
+    })
+    const sorted = Object.entries(counts).map(([tag, count]) => ({ tag, count })).sort((a, b) => b.count - a.count)
+    res.json({ tags: sorted })
+  } catch {
+    res.json({ tags: [] })
   }
 })
 

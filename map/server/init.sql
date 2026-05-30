@@ -26,6 +26,7 @@ CREATE TABLE IF NOT EXISTS posts (
   author_id INT NOT NULL,
   view_count INT DEFAULT 0,
   is_pinned TINYINT(1) DEFAULT 0,
+  status ENUM('draft','published') NOT NULL DEFAULT 'published',
   likes JSON,
   favorites JSON,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

@@ -15,6 +15,11 @@ body {
   line-height: 1.6;
 }
 
+.dark body {
+  background-color: #0F172A;
+  color: #E2E8F0;
+}
+
 .prose {
   max-width: 65ch;
 }
@@ -97,3 +102,24 @@ body {
 .prose a:hover {
   text-decoration: underline;
 }
+
+.dark .prose { color: #E2E8F0; }
+.dark .prose h1, .dark .prose h2, .dark .prose h3 { color: #F1F5F9; }
+.dark .prose code { background-color: #1E293B; color: #E2E8F0; }
+.dark .prose blockquote { color: #94A3B8; border-left-color: #3B82F6; }
+.dark .prose pre { background-color: #0F172A; }
+
+.dark .bg-white { background-color: #1E293B; }
+.dark .border-gray-200 { border-color: #334155; }
+.dark .border-gray-100 { border-color: #1E293B; }
+.dark .bg-gray-50 { background-color: #0F172A; }
+.dark .bg-gray-100 { background-color: #1E293B; }
+.dark .text-gray-500 { color: #94A3B8; }
+.dark .text-gray-600 { color: #CBD5E1; }
+.dark .text-gray-700 { color: #E2E8F0; }
+.dark .hover\:bg-gray-50:hover { background-color: #1E293B; }
+.dark .hover\:bg-gray-100:hover { background-color: #1E293B; }
+.dark .hover\:bg-gray-200:hover { background-color: #334155; }
+.dark .shadow-sm { box-shadow: 0 1px 2px 0 rgba(0,0,0,0.3); }
+.dark input, .dark textarea, .dark select { background-color: #1E293B; color: #E2E8F0; border-color: #334155; }
+.dark input::placeholder, .dark textarea::placeholder { color: #64748B; }

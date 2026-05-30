@@ -1,15 +1,23 @@
 import { Outlet, Link, useNavigate, useSearchParams } from 'react-router-dom'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useAuth } from '../context/AuthContext'
-import { Home, FileText, User, Settings, LogOut, Plus, Search, Menu as MenuIcon } from 'lucide-react'
+import { Home, FileText, User, Settings, LogOut, Plus, Search, Menu as MenuIcon, Sun, Moon } from 'lucide-react'
 import { categoryMap } from '../utils/constants'
+import { useTheme } from '../context/ThemeContext'
+import { api } from '../context/api'
 
 export default function Layout() {
   const { user, isAuthenticated, logout } = useAuth()
+  const { dark, toggle: toggleTheme } = useTheme()
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
+  const [popularTags, setPopularTags] = useState([])
+
+  useEffect(() => {
+    api.posts.getTags().then(setPopularTags).catch(() => {})
+  }, [])
 
   const currentTags = (searchParams.get('tags') || '').split(',').filter(Boolean)
 
@@ -41,7 +49,7 @@ export default function Layout() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <header className="fixed top-0 left-0 right-0 h-16 bg-white border-b border-gray-200 z-50">
+      <header className="fixed top-0 left-0 right-0 h-16 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 z-50">
         <div className="max-w-7xl mx-auto h-full px-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <button
@@ -65,6 +73,13 @@ export default function Layout() {
               博客
             </Link>
             <Link to="/about" className="hover:text-primary transition">关于</Link>
+            <button
+              onClick={toggleTheme}
+              className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition"
+              title={dark ? '切换亮色模式' : '切换暗色模式'}
+            >
+              {dark ? <Sun size={18} /> : <Moon size={18} />}
+            </button>
           </nav>
 
           <form onSubmit={handleSearch} className="hidden sm:flex items-center">
@@ -182,12 +197,12 @@ export default function Layout() {
             <div className="mb-6">
               <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">热门标签</h3>
               <div className="flex flex-wrap gap-2">
-                {['React', 'JavaScript', 'CSS', 'Node.js', 'Python'].map((tag) => (
+                {(popularTags.length ? popularTags : [{ tag: 'React', count: 1 }, { tag: 'JavaScript', count: 1 }, { tag: 'CSS', count: 1 }, { tag: 'Node.js', count: 1 }, { tag: 'Python', count: 1 }]).map(({ tag }) => (
                   <button
                     key={tag}
                     onClick={() => handleTagToggle(tag)}
                     className={`px-3 py-1 rounded-full text-sm transition ${
-                      currentTags.includes(tag) ? 'bg-primary text-white' : 'bg-gray-100 hover:bg-gray-200'
+                      currentTags.includes(tag) ? 'bg-primary text-white' : 'bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600'
                     }`}
                   >
                     {tag}
