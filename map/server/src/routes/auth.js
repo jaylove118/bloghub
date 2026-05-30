@@ -1,10 +1,12 @@
 import { Router } from 'express'
 import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
+import crypto from 'crypto'
 import pool from '../config/db.js'
 import { authRequired } from '../middleware/auth.js'
 import { validate } from '../middleware/validate.js'
 import { AppError } from '../utils/errors.js'
+import { sendVerificationEmail, sendPasswordResetEmail } from '../utils/email.js'
 
 const router = Router()
 
@@ -24,20 +26,24 @@ router.post('/register', registerValidation, async (req, res, next) => {
     }
 
     const hashedPassword = await bcrypt.hash(password, 10)
+    const verifyToken = crypto.randomBytes(32).toString('hex')
     const [result] = await pool.query(
-      'INSERT INTO users (username, email, password, avatar) VALUES (?, ?, ?, ?)',
-      [username, email, hashedPassword, avatar || '']
+      'INSERT INTO users (username, email, password, avatar, verify_token) VALUES (?, ?, ?, ?, ?)',
+      [username, email, hashedPassword, avatar || '', verifyToken]
     )
 
     const userId = result.insertId
     const token = jwt.sign({ userId }, process.env.JWT_SECRET, { expiresIn: '7d' })
 
+    // Send verification email (non-blocking)
+    sendVerificationEmail(email, verifyToken).catch(() => {})
+
     const [users] = await pool.query(
-      'SELECT id, username, email, avatar, bio, github, created_at FROM users WHERE id = ?',
+      'SELECT id, username, email, avatar, bio, github, email_verified, created_at FROM users WHERE id = ?',
       [userId]
     )
 
-    res.status(201).json({ user: users[0], token })
+    res.status(201).json({ user: users[0], token, verifyToken })
   } catch (err) {
     next(err)
   }
@@ -145,28 +151,167 @@ router.put('/password', authRequired, async (req, res, next) => {
 
 router.post('/forgot-password', async (req, res, next) => {
   try {
-    const { email, username } = req.body
+    const { email, username, newPassword, token } = req.body
 
+    // Token-based reset (from email link)
+    if (token) {
+      if (!newPassword || newPassword.length < 6) {
+        throw AppError(400, '新密码至少需要6个字符')
+      }
+      const [users] = await pool.query(
+        'SELECT id FROM users WHERE reset_token = ? AND reset_token_expires > NOW()',
+        [token]
+      )
+      if (users.length === 0) {
+        throw AppError(400, '重置链接已过期或无效')
+      }
+      const hashed = await bcrypt.hash(newPassword, 10)
+      await pool.query('UPDATE users SET password = ?, reset_token = NULL, reset_token_expires = NULL WHERE id = ?', [hashed, users[0].id])
+      return res.json({ success: true, message: '密码重置成功' })
+    }
+
+    // Step 1: Generate reset token and send email
     if (!email || !username) {
       throw AppError(400, '请填写邮箱和用户名')
     }
 
     const [users] = await pool.query(
-      'SELECT id FROM users WHERE email = ? AND username = ?',
+      'SELECT id, email FROM users WHERE email = ? AND username = ?',
       [email, username]
     )
     if (users.length === 0) {
       throw AppError(404, '邮箱与用户名不匹配')
     }
 
-    if (!req.body.newPassword || req.body.newPassword.length < 6) {
-      throw AppError(400, '新密码至少需要6个字符')
+    const resetToken = crypto.randomBytes(32).toString('hex')
+    await pool.query(
+      'UPDATE users SET reset_token = ?, reset_token_expires = DATE_ADD(NOW(), INTERVAL 1 HOUR) WHERE id = ?',
+      [resetToken, users[0].id]
+    )
+
+    // Send reset email (non-blocking)
+    sendPasswordResetEmail(users[0].email, resetToken).catch(() => {})
+
+    res.json({ success: true, message: '重置链接已发送到邮箱', resetToken })
+  } catch (err) {
+    next(err)
+  }
+})
+
+// OAuth - GitHub
+router.get('/github', (req, res) => {
+  const clientId = process.env.GITHUB_CLIENT_ID
+  if (!clientId) return res.status(500).json({ message: 'GitHub OAuth 未配置' })
+  const redirectUri = (process.env.SITE_URL || 'http://localhost:5173') + '/api/auth/github/callback'
+  res.redirect(`https://github.com/login/oauth/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=user:email`)
+})
+
+router.get('/github/callback', async (req, res, next) => {
+  try {
+    const { code } = req.query
+    if (!code) throw AppError(400, '授权失败')
+
+    const tokenRes = await fetch('https://github.com/login/oauth/access_token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      body: JSON.stringify({
+        client_id: process.env.GITHUB_CLIENT_ID,
+        client_secret: process.env.GITHUB_CLIENT_SECRET,
+        code,
+      }),
+    })
+    const tokenData = await tokenRes.json()
+    if (tokenData.error) throw AppError(400, 'GitHub授权失败')
+
+    const userRes = await fetch('https://api.github.com/user', {
+      headers: { Authorization: 'Bearer ' + tokenData.access_token },
+    })
+    const ghUser = await userRes.json()
+
+    // Find or create user
+    const [existing] = await pool.query('SELECT * FROM users WHERE github = ? OR email = ?', [ghUser.login, ghUser.email || ghUser.login + '@github.user'])
+    let userId
+    if (existing.length > 0) {
+      userId = existing[0].id
+    } else {
+      const [result] = await pool.query(
+        'INSERT INTO users (username, email, password, avatar, github) VALUES (?, ?, ?, ?, ?)',
+        [ghUser.login, ghUser.email || ghUser.login + '@github.user', '', ghUser.avatar_url || '', ghUser.login]
+      )
+      userId = result.insertId
     }
 
-    const hashed = await bcrypt.hash(req.body.newPassword, 10)
-    await pool.query('UPDATE users SET password = ? WHERE id = ?', [hashed, users[0].id])
+    const token = jwt.sign({ userId }, process.env.JWT_SECRET, { expiresIn: '7d' })
+    const siteUrl = process.env.SITE_URL || 'http://localhost:5173'
+    res.redirect(siteUrl + '/oauth-callback?token=' + token)
+  } catch (err) {
+    next(err)
+  }
+})
 
-    res.json({ success: true, message: '密码重置成功' })
+// OAuth - Google
+router.get('/google', (req, res) => {
+  const clientId = process.env.GOOGLE_CLIENT_ID
+  if (!clientId) return res.status(500).json({ message: 'Google OAuth 未配置' })
+  const redirectUri = (process.env.SITE_URL || 'http://localhost:5173') + '/api/auth/google/callback'
+  res.redirect(`https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=email%20profile`)
+})
+
+router.get('/google/callback', async (req, res, next) => {
+  try {
+    const { code } = req.query
+    if (!code) throw AppError(400, '授权失败')
+
+    const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        client_id: process.env.GOOGLE_CLIENT_ID,
+        client_secret: process.env.GOOGLE_CLIENT_SECRET,
+        code,
+        redirect_uri: (process.env.SITE_URL || 'http://localhost:5173') + '/api/auth/google/callback',
+        grant_type: 'authorization_code',
+      }),
+    })
+    const tokenData = await tokenRes.json()
+    if (tokenData.error) throw AppError(400, 'Google授权失败')
+
+    const userRes = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
+      headers: { Authorization: 'Bearer ' + tokenData.access_token },
+    })
+    const gUser = await userRes.json()
+
+    const [existing] = await pool.query('SELECT * FROM users WHERE email = ?', [gUser.email])
+    let userId
+    if (existing.length > 0) {
+      userId = existing[0].id
+    } else {
+      const [result] = await pool.query(
+        'INSERT INTO users (username, email, password, avatar) VALUES (?, ?, ?, ?)',
+        [gUser.name || gUser.email.split('@')[0], gUser.email, '', gUser.picture || '']
+      )
+      userId = result.insertId
+    }
+
+    const token = jwt.sign({ userId }, process.env.JWT_SECRET, { expiresIn: '7d' })
+    const siteUrl = process.env.SITE_URL || 'http://localhost:5173'
+    res.redirect(siteUrl + '/oauth-callback?token=' + token)
+  } catch (err) {
+    next(err)
+  }
+})
+
+// Verify email
+router.get('/verify-email', async (req, res, next) => {
+  try {
+    const { token } = req.query
+    if (!token) return res.status(400).json({ message: '缺少验证token' })
+    const [result] = await pool.query(
+      'UPDATE users SET email_verified = 1, verify_token = NULL WHERE verify_token = ?',
+      [token]
+    )
+    if (result.affectedRows === 0) return res.status(404).json({ message: '无效的验证链接' })
+    res.json({ message: '邮箱验证成功' })
   } catch (err) {
     next(err)
   }

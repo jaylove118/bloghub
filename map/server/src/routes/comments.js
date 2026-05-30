@@ -38,6 +38,28 @@ router.post('/', authRequired, commentValidation, async (req, res, next) => {
       'INSERT INTO comments (content, post_id, user_id, parent_id) VALUES (?, ?, ?, ?)',
       [content, postId, req.userId, parentId || null]
     )
+
+    // Notifications
+    const [post] = await pool.query('SELECT author_id, title FROM posts WHERE id = ?', [postId])
+    if (post.length > 0) {
+      if (parentId) {
+        // Reply notification
+        const [parent] = await pool.query('SELECT user_id FROM comments WHERE id = ?', [parentId])
+        if (parent.length > 0 && parent[0].user_id !== req.userId) {
+          await pool.query(
+            'INSERT INTO notifications (user_id, type, actor_id, post_id, comment_id, message) VALUES (?, ?, ?, ?, ?, ?)',
+            [parent[0].user_id, 'reply', req.userId, Number(postId), result.insertId, '回复了你的评论']
+          )
+        }
+      } else if (post[0].author_id !== req.userId) {
+        // Comment notification to post author
+        await pool.query(
+          'INSERT INTO notifications (user_id, type, actor_id, post_id, comment_id, message) VALUES (?, ?, ?, ?, ?, ?)',
+          [post[0].author_id, 'comment', req.userId, Number(postId), result.insertId, '评论了你的文章《' + post[0].title + '》']
+        )
+      }
+    }
+
     const [rows] = await pool.query(
       'SELECT c.*, u.username, u.avatar FROM comments c JOIN users u ON c.user_id = u.id WHERE c.id = ?',
       [result.insertId]
@@ -72,7 +94,7 @@ router.post('/:id/like', authRequired, async (req, res, next) => {
   try {
     await conn.beginTransaction()
 
-    const [rows] = await conn.query('SELECT likes FROM comments WHERE id = ? FOR UPDATE', [req.params.id])
+    const [rows] = await conn.query('SELECT likes, user_id, content FROM comments WHERE id = ? FOR UPDATE', [req.params.id])
     if (rows.length === 0) {
       await conn.rollback()
       throw AppError(404, '评论不存在')
@@ -83,6 +105,13 @@ router.post('/:id/like', authRequired, async (req, res, next) => {
       likes = likes.filter(uid => uid !== req.userId)
     } else {
       likes.push(req.userId)
+      // Like notification
+      if (rows[0].user_id !== req.userId) {
+        await conn.query(
+          'INSERT INTO notifications (user_id, type, actor_id, comment_id, message) VALUES (?, ?, ?, ?, ?)',
+          [rows[0].user_id, 'like', req.userId, Number(req.params.id), '赞了你的评论']
+        )
+      }
     }
 
     await conn.query('UPDATE comments SET likes = ? WHERE id = ?', [JSON.stringify(likes), req.params.id])

@@ -5,6 +5,7 @@ import { Home, FileText, User, Settings, LogOut, Plus, Search, Menu as MenuIcon,
 import { categoryMap } from '../utils/constants'
 import { useTheme } from '../context/ThemeContext'
 import { api } from '../context/api'
+import NotificationBell from './NotificationBell'
 
 export default function Layout() {
   const { user, isAuthenticated, logout } = useAuth()
@@ -96,6 +97,7 @@ export default function Layout() {
           </form>
 
           <div className="flex items-center gap-3">
+            {isAuthenticated && <NotificationBell />}
             {isAuthenticated ? (
               <>
                 <Link

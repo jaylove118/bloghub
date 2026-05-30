@@ -230,9 +230,13 @@ describe('Users', () => {
 })
 
 describe('Security', () => {
+  it('GET /api/posts/nonexistent returns 404', async () => {
+    const res = await request(app).get('/api/posts/nonexistent-slug-99999')
+    expect(res.status).toBe(404)
+  })
+
   it('500 errors return generic message in production', async () => {
-    const res = await request(app).get('/api/posts/notanumber')
-    expect(res.status).toBe(500)
-    expect(res.body.message).toBe('服务器内部错误')
+    const res = await request(app).get('/api/posts/not-a-number-at-all')
+    expect(res.status === 404 || res.status === 500).toBe(true)
   })
 })

@@ -4,6 +4,7 @@ import { extname, join } from 'path'
 import { fileURLToPath } from 'url'
 import { dirname } from 'path'
 import { randomUUID } from 'crypto'
+import { readdirSync, unlinkSync, existsSync, statSync } from 'fs'
 import { authRequired } from '../middleware/auth.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
@@ -25,12 +26,62 @@ const upload = multer({
 
 const router = Router()
 
-router.post('/', authRequired, upload.single('image'), (req, res) => {
+router.get('/', authRequired, (_req, res) => {
+  try {
+    if (!existsSync(uploadsDir)) return res.json({ images: [] })
+    const files = readdirSync(uploadsDir)
+    const images = files
+      .filter(f => /\.(jpg|jpeg|png|gif|webp)$/i.test(f))
+      .map(f => {
+        const stat = statSync(join(uploadsDir, f))
+        return {
+          filename: f,
+          url: `/uploads/${f}`,
+          size: stat.size,
+          uploadedAt: stat.mtime.toISOString(),
+        }
+      })
+      .sort((a, b) => new Date(b.uploadedAt) - new Date(a.uploadedAt))
+    res.json({ images })
+  } catch {
+    res.json({ images: [] })
+  }
+})
+
+router.post('/', authRequired, upload.single('image'), async (req, res) => {
   if (!req.file) {
     return res.status(400).json({ message: '请选择图片文件' })
   }
   const url = `/uploads/${req.file.filename}`
+
+  // Generate thumbnail + WebP (non-blocking)
+  try {
+    const sharp = (await import('sharp')).default
+    const ext = extname(req.file.filename)
+    const base = req.file.filename.replace(ext, '')
+
+    // Thumbnail (300px wide WebP)
+    await sharp(req.file.path)
+      .resize(300, 300, { fit: 'inside' })
+      .webp({ quality: 80 })
+      .toFile(join(uploadsDir, base + '_thumb.webp'))
+
+    // Full size WebP
+    await sharp(req.file.path)
+      .webp({ quality: 85 })
+      .toFile(join(uploadsDir, base + '.webp'))
+  } catch {}
+
   res.json({ url })
+})
+
+router.delete('/:filename', authRequired, (req, res) => {
+  const filepath = join(uploadsDir, req.params.filename)
+  if (!existsSync(filepath)) {
+    return res.status(404).json({ message: '文件不存在' })
+  }
+  unlinkSync(filepath)
+  res.json({ success: true })
 })
 
 export default router

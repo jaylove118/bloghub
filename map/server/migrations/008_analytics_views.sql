@@ -1,0 +1,9 @@
+CREATE TABLE IF NOT EXISTS analytics_views (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  post_id INT,
+  viewer_ip VARCHAR(45),
+  referrer VARCHAR(500),
+  user_agent VARCHAR(500),
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE SET NULL
+);

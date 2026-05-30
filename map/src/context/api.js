@@ -50,6 +50,7 @@ function normalizePost(p) {
   return {
     id: p.id,
     title: p.title,
+    slug: p.slug || '',
     content: p.content,
     excerpt: p.excerpt,
     category: p.category,
@@ -195,6 +196,15 @@ export const api = {
       const data = await request('/posts/tags/all')
       return data.tags
     },
+
+    async getRevisions(postId) {
+      const data = await request('/posts/' + postId + '/revisions')
+      return data.revisions
+    },
+
+    async restoreRevision(postId, revisionId) {
+      await request('/posts/' + postId + '/restore/' + revisionId, { method: 'POST' })
+    },
   },
 
   comments: {
@@ -238,6 +248,37 @@ export const api = {
       } catch {
         return null
       }
+    },
+  },
+
+  notifications: {
+    async getAll() {
+      const data = await request('/notifications')
+      return data
+    },
+
+    async markRead(id) {
+      await request('/notifications/' + id + '/read', { method: 'PUT' })
+    },
+
+    async markAllRead() {
+      await request('/notifications/read-all', { method: 'PUT' })
+    },
+  },
+
+  subscribers: {
+    async subscribe(email) {
+      return await request('/subscribers/subscribe', {
+        method: 'POST',
+        body: JSON.stringify({ email }),
+      })
+    },
+
+    async unsubscribe(email) {
+      return await request('/subscribers/unsubscribe', {
+        method: 'POST',
+        body: JSON.stringify({ email }),
+      })
     },
   },
 }

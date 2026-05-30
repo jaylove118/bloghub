@@ -12,6 +12,7 @@ const postValidation = validate({
   category: { required: true, max: 20 },
   excerpt: { max: 500 },
   coverImage: { max: 2000 },
+  slug: { max: 200 },
   status: { max: 10 },
 })
 
@@ -22,6 +23,14 @@ function parseJsonFields(post) {
     likes: typeof post.likes === 'string' ? JSON.parse(post.likes) : (post.likes || []),
     favorites: typeof post.favorites === 'string' ? JSON.parse(post.favorites) : (post.favorites || []),
   }
+}
+
+function generateSlug(title) {
+  return title
+    .toLowerCase()
+    .replace(/[^a-z0-9一-龥]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 180) || 'post'
 }
 
 router.get('/', async (req, res, next) => {
@@ -43,15 +52,15 @@ router.get('/', async (req, res, next) => {
       params.push(Number(authorId))
     }
     if (search) {
-      where += ' AND (p.title LIKE ? OR p.content LIKE ?)'
-      params.push('%' + search + '%', '%' + search + '%')
+      where += ' AND MATCH(p.title, p.content) AGAINST(? IN BOOLEAN MODE)'
+      params.push(search + '*')
     }
     if (tag) {
       where += ' AND JSON_CONTAINS(p.tags, ?)'
       params.push(JSON.stringify(tag))
     }
     if (status === 'draft') {
-      where += ' AND p.status = \'draft\''
+      where += " AND p.status = 'draft'"
     } else {
       where += " AND p.status = 'published' AND (p.scheduled_at IS NULL OR p.scheduled_at <= NOW())"
     }
@@ -74,35 +83,45 @@ router.get('/', async (req, res, next) => {
   }
 })
 
-router.get('/:id', async (req, res, next) => {
+router.get('/:idOrSlug', async (req, res, next) => {
   try {
-    const { id } = req.params
+    const { idOrSlug } = req.params
+    const isNumeric = /^\d+$/.test(idOrSlug)
 
     const recentlyViewed = (() => {
       try {
         return req.cookies?.viewed_posts ? JSON.parse(req.cookies.viewed_posts) : []
-      } catch {
-        return []
-      }
+      } catch { return [] }
     })()
-    if (!recentlyViewed.includes(Number(id))) {
-      await pool.query('UPDATE posts SET view_count = view_count + 1 WHERE id = ?', [id])
-      recentlyViewed.push(Number(id))
-      res.cookie('viewed_posts', JSON.stringify(recentlyViewed.slice(-20)), {
-        maxAge: 30 * 60 * 1000, httpOnly: true, sameSite: 'lax',
-      })
-    }
 
     const [rows] = await pool.query(
-      'SELECT p.*, u.username AS author_name, u.avatar AS author_avatar FROM posts p JOIN users u ON p.author_id = u.id WHERE p.id = ?',
-      [id]
+      'SELECT p.*, u.username AS author_name, u.avatar AS author_avatar FROM posts p JOIN users u ON p.author_id = u.id WHERE ' + (isNumeric ? 'p.id = ?' : 'p.slug = ?'),
+      [isNumeric ? Number(idOrSlug) : idOrSlug]
     )
 
     if (rows.length === 0) {
       throw AppError(404, '文章不存在')
     }
 
-    res.json({ post: parseJsonFields(rows[0]) })
+    const post = rows[0]
+    if (!recentlyViewed.includes(Number(post.id))) {
+      await pool.query('UPDATE posts SET view_count = view_count + 1 WHERE id = ?', [post.id])
+
+      // Track detailed analytics
+      try {
+        await pool.query(
+          'INSERT INTO analytics_views (post_id, viewer_ip, referrer, user_agent) VALUES (?, ?, ?, ?)',
+          [post.id, req.ip || '', req.get('Referer') || '', req.get('User-Agent') || '']
+        )
+      } catch {}
+
+      recentlyViewed.push(Number(post.id))
+      res.cookie('viewed_posts', JSON.stringify(recentlyViewed.slice(-20)), {
+        maxAge: 30 * 60 * 1000, httpOnly: true, sameSite: 'lax',
+      })
+    }
+
+    res.json({ post: parseJsonFields(post) })
   } catch (err) {
     next(err)
   }
@@ -110,12 +129,17 @@ router.get('/:id', async (req, res, next) => {
 
 router.post('/', authRequired, postValidation, async (req, res, next) => {
   try {
-    const { title, content, excerpt, category, coverImage, tags, status, scheduledAt } = req.body
+    const { title, content, excerpt, category, coverImage, tags, status, scheduledAt, slug: customSlug } = req.body
+    const slug = customSlug || generateSlug(title)
 
     const [result] = await pool.query(
-      'INSERT INTO posts (title, content, excerpt, category, cover_image, tags, author_id, status, scheduled_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
-      [title, content, excerpt || '', category, coverImage || '', JSON.stringify(tags || []), req.userId, status === 'draft' ? 'draft' : 'published', scheduledAt || null]
+      'INSERT INTO posts (title, slug, content, excerpt, category, cover_image, tags, author_id, status, scheduled_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      [title, slug, content, excerpt || '', category, coverImage || '', JSON.stringify(tags || []), req.userId, status === 'draft' ? 'draft' : 'published', scheduledAt || null]
     )
+
+    // Update slug with ID suffix for uniqueness
+    const finalSlug = slug + '-' + result.insertId
+    await pool.query('UPDATE posts SET slug = ? WHERE id = ?', [finalSlug, result.insertId])
 
     const [rows] = await pool.query(
       'SELECT p.*, u.username AS author_name, u.avatar AS author_avatar FROM posts p JOIN users u ON p.author_id = u.id WHERE p.id = ?',
@@ -131,7 +155,7 @@ router.post('/', authRequired, postValidation, async (req, res, next) => {
 router.put('/:id', authRequired, postValidation, async (req, res, next) => {
   try {
     const { id } = req.params
-    const { title, content, excerpt, category, coverImage, tags, status, scheduledAt } = req.body
+    const { title, content, excerpt, category, coverImage, tags, status, scheduledAt, slug: customSlug } = req.body
 
     const [existing] = await pool.query('SELECT * FROM posts WHERE id = ?', [id])
     if (existing.length === 0) {
@@ -141,10 +165,23 @@ router.put('/:id', authRequired, postValidation, async (req, res, next) => {
       throw AppError(403, '无权修改他人文章')
     }
 
+    // Save revision before update
+    await pool.query(
+      'INSERT INTO post_revisions (post_id, title, content, revised_by) VALUES (?, ?, ?, ?)',
+      [id, existing[0].title, existing[0].content, req.userId]
+    )
+
+    // Keep only last 10 revisions
+    await pool.query(
+      'DELETE FROM post_revisions WHERE post_id = ? AND id NOT IN (SELECT id FROM (SELECT id FROM post_revisions WHERE post_id = ? ORDER BY created_at DESC LIMIT 10) AS tmp)',
+      [id, id]
+    )
+
+    const newSlug = customSlug || generateSlug(title) + '-' + id
     const newStatus = status === 'draft' ? 'draft' : 'published'
     await pool.query(
-      'UPDATE posts SET title=?, content=?, excerpt=?, category=?, cover_image=?, tags=?, status=?, scheduled_at=? WHERE id=?',
-      [title, content, excerpt || '', category, coverImage || '', JSON.stringify(tags || []), newStatus, scheduledAt || null, id]
+      'UPDATE posts SET title=?, slug=?, content=?, excerpt=?, category=?, cover_image=?, tags=?, status=?, scheduled_at=? WHERE id=?',
+      [title, newSlug, content, excerpt || '', category, coverImage || '', JSON.stringify(tags || []), newStatus, scheduledAt || null, id]
     )
 
     const [rows] = await pool.query(
@@ -175,26 +212,74 @@ router.delete('/:id', authRequired, async (req, res, next) => {
   }
 })
 
+// Revisions
+router.get('/:id/revisions', async (req, res, next) => {
+  try {
+    const [rows] = await pool.query(
+      'SELECT r.*, u.username AS revised_by_name FROM post_revisions r JOIN users u ON r.revised_by = u.id WHERE r.post_id = ? ORDER BY r.created_at DESC LIMIT 20',
+      [req.params.id]
+    )
+    res.json({ revisions: rows })
+  } catch (err) {
+    next(err)
+  }
+})
+
+router.post('/:id/restore/:revId', authRequired, async (req, res, next) => {
+  try {
+    const { id, revId } = req.params
+    const [existing] = await pool.query('SELECT * FROM posts WHERE id = ?', [id])
+    if (existing.length === 0) throw AppError(404, '文章不存在')
+    if (existing[0].author_id !== req.userId) throw AppError(403, '无权操作')
+
+    const [revs] = await pool.query('SELECT * FROM post_revisions WHERE id = ? AND post_id = ?', [revId, id])
+    if (revs.length === 0) throw AppError(404, '版本不存在')
+
+    // Save current as revision before restoring
+    await pool.query(
+      'INSERT INTO post_revisions (post_id, title, content, revised_by) VALUES (?, ?, ?, ?)',
+      [id, existing[0].title, existing[0].content, req.userId]
+    )
+
+    const rev = revs[0]
+    await pool.query('UPDATE posts SET title=?, content=? WHERE id=?', [rev.title, rev.content, id])
+    res.json({ success: true })
+  } catch (err) {
+    next(err)
+  }
+})
+
 router.post('/:id/like', authRequired, async (req, res, next) => {
   const conn = await pool.getConnection()
   try {
     const { id } = req.params
     await conn.beginTransaction()
 
-    const [rows] = await conn.query('SELECT likes FROM posts WHERE id = ? FOR UPDATE', [id])
+    const [rows] = await conn.query('SELECT likes, author_id, title FROM posts WHERE id = ? FOR UPDATE', [id])
     if (rows.length === 0) {
       await conn.rollback()
       throw AppError(404, '文章不存在')
     }
 
     let likes = typeof rows[0].likes === 'string' ? JSON.parse(rows[0].likes) : (rows[0].likes || [])
+    let added = false
     if (likes.includes(req.userId)) {
       likes = likes.filter(uid => uid !== req.userId)
     } else {
       likes.push(req.userId)
+      added = true
     }
 
     await conn.query('UPDATE posts SET likes = ? WHERE id = ?', [JSON.stringify(likes), id])
+
+    // Create notification for like
+    if (added && rows[0].author_id !== req.userId) {
+      await conn.query(
+        'INSERT INTO notifications (user_id, type, actor_id, post_id, message) VALUES (?, ?, ?, ?, ?)',
+        [rows[0].author_id, 'like', req.userId, Number(id), '赞了你的文章《' + rows[0].title + '》']
+      )
+    }
+
     await conn.commit()
     res.json({ likes })
   } catch (err) {
@@ -254,14 +339,9 @@ router.get('/tags/all', async (_req, res) => {
 router.put('/:id/pin', authRequired, async (req, res, next) => {
   try {
     const { id } = req.params
-
     const [existing] = await pool.query('SELECT author_id, is_pinned FROM posts WHERE id = ?', [id])
-    if (existing.length === 0) {
-      throw AppError(404, '文章不存在')
-    }
-    if (existing[0].author_id !== req.userId) {
-      throw AppError(403, '无权操作他人文章')
-    }
+    if (existing.length === 0) throw AppError(404, '文章不存在')
+    if (existing[0].author_id !== req.userId) throw AppError(403, '无权操作他人文章')
 
     const newPinned = existing[0].is_pinned ? 0 : 1
     await pool.query('UPDATE posts SET is_pinned = ? WHERE id = ?', [newPinned, id])
