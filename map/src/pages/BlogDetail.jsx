@@ -171,12 +171,14 @@ export default function BlogDetail() {
 
   if (!post) {
     return (
-      <div className="text-center py-16">
-        <p className="text-gray-500 mb-4">文章不存在</p>
-        <Link to="/blogs" className="text-primary hover:underline">返回列表</Link>
-      </div>
-      <ReadingProgress />
-      <BackToTop />
+      <>
+        <div className="text-center py-16">
+          <p className="text-gray-500 mb-4">文章不存在</p>
+          <Link to="/blogs" className="text-primary hover:underline">返回列表</Link>
+        </div>
+        <ReadingProgress />
+        <BackToTop />
+      </>
     )
   }
 
