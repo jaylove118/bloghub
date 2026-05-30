@@ -32,6 +32,10 @@ export default function Editor() {
   const navigate = useNavigate()
   const isEditing = Boolean(id)
 
+  useEffect(() => {
+    document.title = isEditing ? '编辑文章 - BlogHub' : '写文章 - BlogHub'
+  }, [isEditing])
+
   const [formData, setFormData] = useState({
     title: '',
     content: '',

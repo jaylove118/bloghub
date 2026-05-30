@@ -2,6 +2,7 @@ import { Router } from 'express'
 import pool from '../config/db.js'
 import { authRequired } from '../middleware/auth.js'
 import { validate } from '../middleware/validate.js'
+import { AppError } from '../utils/errors.js'
 
 const router = Router()
 
@@ -20,12 +21,6 @@ function parseJsonFields(post) {
     likes: typeof post.likes === 'string' ? JSON.parse(post.likes) : (post.likes || []),
     favorites: typeof post.favorites === 'string' ? JSON.parse(post.favorites) : (post.favorites || []),
   }
-}
-
-function AppError(status, message) {
-  const err = new Error(message)
-  err.status = status
-  return err
 }
 
 router.get('/', async (req, res, next) => {

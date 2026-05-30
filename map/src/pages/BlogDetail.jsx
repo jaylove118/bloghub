@@ -22,6 +22,10 @@ export default function BlogDetail() {
   const isAuthor = user?.id === post?.authorId
 
   useEffect(() => {
+    if (post?.title) document.title = post.title + ' - BlogHub'
+  }, [post])
+
+  useEffect(() => {
     const fetchData = async () => {
       setLoading(true)
       const postData = await api.posts.getById(id)

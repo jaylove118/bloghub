@@ -10,6 +10,7 @@ import BlogList from './pages/BlogList'
 import BlogDetail from './pages/BlogDetail'
 import Editor from './pages/Editor'
 import About from './pages/About'
+import ForgotPassword from './pages/ForgotPassword'
 
 export default function App() {
   return (
@@ -24,6 +25,7 @@ export default function App() {
             <Route path="editor/:id" element={<Editor />} />
             <Route path="login" element={<Login />} />
             <Route path="register" element={<Register />} />
+            <Route path="forgot-password" element={<ForgotPassword />} />
             <Route path="profile/:id" element={<Profile />} />
             <Route path="settings" element={<Settings />} />
             <Route path="about" element={<About />} />

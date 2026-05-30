@@ -4,14 +4,9 @@ import jwt from 'jsonwebtoken'
 import pool from '../config/db.js'
 import { authRequired } from '../middleware/auth.js'
 import { validate } from '../middleware/validate.js'
+import { AppError } from '../utils/errors.js'
 
 const router = Router()
-
-function AppError(status, message) {
-  const err = new Error(message)
-  err.status = status
-  return err
-}
 
 const registerValidation = validate({
   username: { required: true, max: 50 },
@@ -143,6 +138,35 @@ router.put('/password', authRequired, async (req, res, next) => {
     await pool.query('UPDATE users SET password = ? WHERE id = ?', [hashed, req.userId])
 
     res.json({ success: true })
+  } catch (err) {
+    next(err)
+  }
+})
+
+router.post('/forgot-password', async (req, res, next) => {
+  try {
+    const { email, username } = req.body
+
+    if (!email || !username) {
+      throw AppError(400, '请填写邮箱和用户名')
+    }
+
+    const [users] = await pool.query(
+      'SELECT id FROM users WHERE email = ? AND username = ?',
+      [email, username]
+    )
+    if (users.length === 0) {
+      throw AppError(404, '邮箱与用户名不匹配')
+    }
+
+    if (!req.body.newPassword || req.body.newPassword.length < 6) {
+      throw AppError(400, '新密码至少需要6个字符')
+    }
+
+    const hashed = await bcrypt.hash(req.body.newPassword, 10)
+    await pool.query('UPDATE users SET password = ? WHERE id = ?', [hashed, users[0].id])
+
+    res.json({ success: true, message: '密码重置成功' })
   } catch (err) {
     next(err)
   }

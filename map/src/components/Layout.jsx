@@ -2,12 +2,7 @@ import { Outlet, Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useState } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { Home, FileText, User, Settings, LogOut, Plus, Search, Menu as MenuIcon } from 'lucide-react'
-
-const categories = [
-  { name: '技术', slug: 'tech', icon: '💻' },
-  { name: '生活', slug: 'life', icon: '🌿' },
-  { name: '随笔', slug: 'essay', icon: '✍️' },
-]
+import { categoryMap } from '../utils/constants'
 
 export default function Layout() {
   const { user, isAuthenticated, logout } = useAuth()
@@ -171,10 +166,10 @@ export default function Layout() {
                   <span>📚</span>
                   <span>全部文章</span>
                 </Link>
-                {categories.map((cat) => (
+                {Object.entries(categoryMap).map(([slug, cat]) => (
                   <Link
-                    key={cat.slug}
-                    to={`/blogs?category=${cat.slug}`}
+                    key={slug}
+                    to={`/blogs?category=${slug}`}
                     className="flex items-center gap-3 px-3 py-2 hover:bg-gray-50 rounded-lg transition"
                   >
                     <span>{cat.icon}</span>

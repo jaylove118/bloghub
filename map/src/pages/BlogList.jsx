@@ -7,6 +7,7 @@ import LoadingSpinner from '../components/LoadingSpinner'
 import CoverPlaceholder from '../components/CoverPlaceholder'
 
 export default function BlogList() {
+  useEffect(() => { document.title = '博客文章 - BlogHub' }, [])
   const [searchParams, setSearchParams] = useSearchParams()
   const [posts, setPosts] = useState([])
   const [loading, setLoading] = useState(true)
@@ -83,7 +84,7 @@ export default function BlogList() {
     setSearchParams(new URLSearchParams())
   }
 
-  const hasFilters = search || category || tags.length
+  const hasFilters = !!(search || category || tags.length)
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">

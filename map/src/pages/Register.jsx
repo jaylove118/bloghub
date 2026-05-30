@@ -1,15 +1,11 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { User, Mail, Lock, Eye, EyeOff, ArrowRight } from 'lucide-react'
-
-const avatars = [
-  'adventurer', 'adventurer-neutral', 'avataaars', 'big-ears', 'big-smile',
-  'bottts', 'croodles', 'fun-emoji', 'icons', 'identicon', 'initials',
-  'lorelei', 'micah', 'miniavs', 'open-peeps', 'personas', 'pixel-art'
-]
+import { avatarTypes } from '../utils/constants'
 
 export default function Register() {
+  useEffect(() => { document.title = '注册 - BlogHub' }, [])
   const { register } = useAuth()
   const navigate = useNavigate()
   const [formData, setFormData] = useState({
@@ -144,7 +140,7 @@ export default function Register() {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">选择头像</label>
               <div className="grid grid-cols-8 gap-2">
-                {avatars.slice(0, 16).map((type) => (
+                {avatarTypes.slice(0, 16).map((type) => (
                   <button
                     key={type}
                     type="button"

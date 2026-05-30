@@ -13,6 +13,8 @@ export default function Home() {
   const [featuredPost, setFeaturedPost] = useState(null)
   const [loading, setLoading] = useState(true)
 
+  useEffect(() => { document.title = 'BlogHub - 全功能博客平台' }, [])
+
   useEffect(() => {
     const fetchPosts = async () => {
       const { posts: data } = await api.posts.getAll()

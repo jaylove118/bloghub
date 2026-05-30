@@ -1,3 +1,9 @@
+export const avatarTypes = [
+  'adventurer', 'adventurer-neutral', 'avataaars', 'big-ears', 'big-smile',
+  'bottts', 'croodles', 'fun-emoji', 'icons', 'identicon', 'initials',
+  'lorelei', 'micah', 'miniavs', 'open-peeps', 'personas', 'pixel-art'
+]
+
 export const categoryMap = {
   tech: { name: '技术', icon: '💻', color: 'bg-blue-100 text-blue-700' },
   life: { name: '生活', icon: '🌿', color: 'bg-green-100 text-green-700' },

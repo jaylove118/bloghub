@@ -116,7 +116,7 @@ export const api = {
       }
     },
 
-    async updateProfile(userId, updates) {
+    async updateProfile(updates) {
       const data = await request('/auth/profile', {
         method: 'PUT',
         body: JSON.stringify(updates),
@@ -145,7 +145,7 @@ export const api = {
       const data = await request('/posts' + (qs ? '?' + qs : ''))
       return {
         posts: data.posts.map(normalizePost),
-        pagination: { page: data.page || 1, limit: data.limit || 12, total: data.total || 0 },
+        pagination: data.pagination || { page: 1, limit: 12, total: 0 },
       }
     },
 

@@ -1,9 +1,10 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { Mail, Lock, Eye, EyeOff, ArrowRight } from 'lucide-react'
 
 export default function Login() {
+  useEffect(() => { document.title = '登录 - BlogHub' }, [])
   const { login } = useAuth()
   const navigate = useNavigate()
   const [formData, setFormData] = useState({ email: '', password: '' })
@@ -96,11 +97,16 @@ export default function Login() {
             </button>
           </form>
 
-          <div className="mt-6 text-center">
+          <div className="mt-6 text-center space-y-2">
             <p className="text-gray-600">
               还没有账户？{' '}
               <Link to="/register" className="text-primary font-medium hover:underline">
                 立即注册
+              </Link>
+            </p>
+            <p>
+              <Link to="/forgot-password" className="text-sm text-gray-400 hover:text-primary transition">
+                忘记密码？
               </Link>
             </p>
           </div>

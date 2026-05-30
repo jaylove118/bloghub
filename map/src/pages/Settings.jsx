@@ -1,16 +1,12 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { api } from '../context/api'
 import { User, Mail, Lock, Save, ArrowLeft, Key } from 'lucide-react'
 import { Link } from 'react-router-dom'
-
-const avatars = [
-  'adventurer', 'adventurer-neutral', 'avataaars', 'big-ears', 'big-smile',
-  'bottts', 'croodles', 'fun-emoji', 'icons', 'identicon', 'initials',
-  'lorelei', 'micah', 'miniavs', 'open-peeps', 'personas', 'pixel-art'
-]
+import { avatarTypes } from '../utils/constants'
 
 export default function Settings() {
+  useEffect(() => { document.title = '账户设置 - BlogHub' }, [])
   const { user, updateProfile } = useAuth()
   const [formData, setFormData] = useState({
     username: user?.username || '',
@@ -170,7 +166,7 @@ export default function Settings() {
               />
             </div>
             <div className="grid grid-cols-8 gap-2">
-              {avatars.slice(0, 16).map((type) => (
+              {avatarTypes.slice(0, 16).map((type) => (
                 <button
                   key={type}
                   type="button"

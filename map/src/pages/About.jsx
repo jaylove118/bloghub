@@ -1,7 +1,9 @@
+import { useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { Heart, Users, BookOpen } from 'lucide-react'
 
 export default function About() {
+  useEffect(() => { document.title = '关于 - BlogHub' }, [])
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
       <div className="text-center mb-12">

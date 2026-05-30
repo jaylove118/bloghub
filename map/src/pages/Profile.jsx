@@ -16,6 +16,10 @@ export default function Profile() {
   const isOwn = currentUser?.id === id
 
   useEffect(() => {
+    if (profile?.username) document.title = profile.username + ' 的个人资料 - BlogHub'
+  }, [profile])
+
+  useEffect(() => {
     const fetchData = async () => {
       setLoading(true)
       const userData = await api.users.getById(id)
@@ -54,7 +58,7 @@ export default function Profile() {
             />
             <div className="flex-1 text-center sm:text-left mt-2 sm:mt-0">
               <h1 className="text-2xl font-bold">{profile.username}</h1>
-              <p className="text-gray-500">{profile.email}</p>
+              {profile.email && <p className="text-gray-500">{profile.email}</p>}
             </div>
             {isOwn && (
               <Link

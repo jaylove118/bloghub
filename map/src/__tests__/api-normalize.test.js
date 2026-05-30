@@ -25,6 +25,8 @@ function normalizePost(p) {
     authorName: p.author_name,
     authorAvatar: p.author_avatar,
     viewCount: p.view_count,
+    commentCount: p.comment_count ?? 0,
+    isPinned: Boolean(p.is_pinned),
     likes: typeof p.likes === 'string' ? JSON.parse(p.likes) : (p.likes || []),
     favorites: typeof p.favorites === 'string' ? JSON.parse(p.favorites) : (p.favorites || []),
     createdAt: p.created_at,
@@ -87,6 +89,8 @@ describe('normalizePost', () => {
     author_name: 'alice',
     author_avatar: 'https://dicebear.com/alice.svg',
     view_count: 42,
+    comment_count: 7,
+    is_pinned: 1,
     likes: JSON.stringify([1, 2]),
     favorites: JSON.stringify([3]),
     created_at: '2024-06-01T00:00:00.000Z',
@@ -100,6 +104,8 @@ describe('normalizePost', () => {
     expect(result.authorAvatar).toBe('https://dicebear.com/alice.svg')
     expect(result.coverImage).toBe('https://img.com/cover.png')
     expect(result.viewCount).toBe(42)
+    expect(result.commentCount).toBe(7)
+    expect(result.isPinned).toBe(true)
     expect(result.createdAt).toBe('2024-06-01T00:00:00.000Z')
     expect(result.updatedAt).toBe('2024-06-02T00:00:00.000Z')
   })

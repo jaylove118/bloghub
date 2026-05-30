@@ -2,6 +2,7 @@ import { Router } from 'express'
 import pool from '../config/db.js'
 import { authRequired } from '../middleware/auth.js'
 import { validate } from '../middleware/validate.js'
+import { AppError } from '../utils/errors.js'
 
 const router = Router()
 
@@ -9,12 +10,6 @@ const commentValidation = validate({
   content: { required: true, min: 1, max: 2000 },
   postId: { required: true },
 })
-
-function AppError(status, message) {
-  const err = new Error(message)
-  err.status = status
-  return err
-}
 
 function parseLikes(row) {
   if (!row) return row
