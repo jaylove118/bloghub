@@ -6,6 +6,7 @@ import { Heart, MessageCircle, Eye, Clock, TrendingUp, Sparkles, Pin } from 'luc
 import { categoryMap, formatDate } from '../utils/constants'
 import LoadingSpinner from '../components/LoadingSpinner'
 import CoverPlaceholder from '../components/CoverPlaceholder'
+import { useSEO } from '../hooks/useSEO'
 
 export default function Home() {
   const { isAuthenticated } = useAuth()
@@ -13,7 +14,7 @@ export default function Home() {
   const [featuredPost, setFeaturedPost] = useState(null)
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => { document.title = 'BlogHub - 全功能博客平台' }, [])
+  useSEO({ title: 'BlogHub - 全功能博客平台', description: '加入我们，分享你的想法和经验。支持 Markdown 写作、社区互动的全功能博客平台。' })
 
   useEffect(() => {
     const fetchPosts = async () => {

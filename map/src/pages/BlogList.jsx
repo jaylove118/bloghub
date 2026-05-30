@@ -5,9 +5,10 @@ import { Clock, Heart, MessageCircle, Search, X, ChevronLeft, ChevronRight, Book
 import { categoryMap, formatDate, readingTime } from '../utils/constants'
 import LoadingSpinner from '../components/LoadingSpinner'
 import CoverPlaceholder from '../components/CoverPlaceholder'
+import { useSEO } from '../hooks/useSEO'
 
 export default function BlogList() {
-  useEffect(() => { document.title = '博客文章 - BlogHub' }, [])
+  useSEO({ title: '博客文章 - BlogHub', description: '浏览所有博客文章，按分类、标签筛选你感兴趣的内容。' })
   const [searchParams, setSearchParams] = useSearchParams()
   const [posts, setPosts] = useState([])
   const [loading, setLoading] = useState(true)

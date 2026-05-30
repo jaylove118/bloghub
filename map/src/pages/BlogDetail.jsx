@@ -5,7 +5,13 @@ import { useAuth } from '../context/AuthContext'
 import { Heart, MessageCircle, Eye, Clock, Edit, Trash2, ArrowLeft, Bookmark, BookOpen, Pin } from 'lucide-react'
 import { parseMarkdown } from '../lib/index'
 import { categoryMap, formatFullDate, readingTime } from '../utils/constants'
+import { useSEO } from '../hooks/useSEO'
 import LoadingSpinner from '../components/LoadingSpinner'
+import SyntaxHighlight from '../components/SyntaxHighlight'
+import TableOfContents from '../components/TableOfContents'
+import { ShareButtons, CodeCopyButton } from '../components/ShareButtons'
+import RelatedPosts from '../components/RelatedPosts'
+import { ReadingProgress, BackToTop } from '../components/ReadingProgress'
 
 export default function BlogDetail() {
   const { id } = useParams()
@@ -21,9 +27,14 @@ export default function BlogDetail() {
 
   const isAuthor = user?.id === post?.authorId
 
-  useEffect(() => {
-    if (post?.title) document.title = post.title + ' - BlogHub'
-  }, [post])
+  const tocData = TableOfContents({ content: post?.content || '' })
+  const displayContent = tocData.addIds ? tocData.addIds(post?.content || '') : post?.content || ''
+
+  useSEO({
+    title: post?.title ? post.title + ' - BlogHub' : 'BlogHub',
+    description: post?.excerpt || post?.content?.replace(/[#*`]/g, '').slice(0, 160),
+    ogImage: post?.coverImage,
+  })
 
   useEffect(() => {
     const fetchData = async () => {
@@ -164,6 +175,8 @@ export default function BlogDetail() {
         <p className="text-gray-500 mb-4">文章不存在</p>
         <Link to="/blogs" className="text-primary hover:underline">返回列表</Link>
       </div>
+      <ReadingProgress />
+      <BackToTop />
     )
   }
 
@@ -227,7 +240,19 @@ export default function BlogDetail() {
             </span>
           </div>
 
-          <div className="prose max-w-none mb-8" dangerouslySetInnerHTML={{ __html: parseMarkdown(post.content) }} />
+          <div className="flex gap-8">
+            <div className="flex-1 min-w-0">
+              <SyntaxHighlight>
+                <div className="prose max-w-none mb-8" dangerouslySetInnerHTML={{ __html: parseMarkdown(displayContent) }} />
+              </SyntaxHighlight>
+              <CodeCopyButton />
+            </div>
+            {tocData.toc && (
+              <aside className="hidden xl:block w-56 flex-shrink-0">
+                <div className="sticky top-24">{tocData.toc}</div>
+              </aside>
+            )}
+          </div>
 
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pt-6 border-t border-gray-100 dark:border-gray-700">
             <div className="flex items-center gap-2 sm:gap-4">
@@ -250,6 +275,7 @@ export default function BlogDetail() {
                 <Bookmark size={18} fill={isFavorited ? 'currentColor' : 'none'} />
                 {post.favorites?.length || 0}
               </button>
+              <ShareButtons title={post.title} />
             </div>
 
             {isAuthor && (
@@ -331,6 +357,8 @@ export default function BlogDetail() {
           ))}
         </div>
       </section>
+
+      <RelatedPosts postId={post.id} category={post.category} tags={post.tags} currentPostId={id} />
     </div>
   )
 }

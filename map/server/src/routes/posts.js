@@ -53,7 +53,7 @@ router.get('/', async (req, res, next) => {
     if (status === 'draft') {
       where += ' AND p.status = \'draft\''
     } else {
-      where += ' AND p.status = \'published\''
+      where += " AND p.status = 'published' AND (p.scheduled_at IS NULL OR p.scheduled_at <= NOW())"
     }
 
     const [countResult] = await pool.query(
@@ -110,11 +110,11 @@ router.get('/:id', async (req, res, next) => {
 
 router.post('/', authRequired, postValidation, async (req, res, next) => {
   try {
-    const { title, content, excerpt, category, coverImage, tags, status } = req.body
+    const { title, content, excerpt, category, coverImage, tags, status, scheduledAt } = req.body
 
     const [result] = await pool.query(
-      'INSERT INTO posts (title, content, excerpt, category, cover_image, tags, author_id, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-      [title, content, excerpt || '', category, coverImage || '', JSON.stringify(tags || []), req.userId, status === 'draft' ? 'draft' : 'published']
+      'INSERT INTO posts (title, content, excerpt, category, cover_image, tags, author_id, status, scheduled_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      [title, content, excerpt || '', category, coverImage || '', JSON.stringify(tags || []), req.userId, status === 'draft' ? 'draft' : 'published', scheduledAt || null]
     )
 
     const [rows] = await pool.query(
@@ -131,7 +131,7 @@ router.post('/', authRequired, postValidation, async (req, res, next) => {
 router.put('/:id', authRequired, postValidation, async (req, res, next) => {
   try {
     const { id } = req.params
-    const { title, content, excerpt, category, coverImage, tags, status } = req.body
+    const { title, content, excerpt, category, coverImage, tags, status, scheduledAt } = req.body
 
     const [existing] = await pool.query('SELECT * FROM posts WHERE id = ?', [id])
     if (existing.length === 0) {
@@ -143,8 +143,8 @@ router.put('/:id', authRequired, postValidation, async (req, res, next) => {
 
     const newStatus = status === 'draft' ? 'draft' : 'published'
     await pool.query(
-      'UPDATE posts SET title=?, content=?, excerpt=?, category=?, cover_image=?, tags=?, status=? WHERE id=?',
-      [title, content, excerpt || '', category, coverImage || '', JSON.stringify(tags || []), newStatus, id]
+      'UPDATE posts SET title=?, content=?, excerpt=?, category=?, cover_image=?, tags=?, status=?, scheduled_at=? WHERE id=?',
+      [title, content, excerpt || '', category, coverImage || '', JSON.stringify(tags || []), newStatus, scheduledAt || null, id]
     )
 
     const [rows] = await pool.query(

@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext'
 import { Calendar, Link as LinkIcon, Heart, MessageCircle, Eye, Clock } from 'lucide-react'
 import { formatFullDate } from '../utils/constants'
 import LoadingSpinner from '../components/LoadingSpinner'
+import { useSEO } from '../hooks/useSEO'
 
 export default function Profile() {
   const { id } = useParams()
@@ -15,9 +16,10 @@ export default function Profile() {
 
   const isOwn = currentUser?.id === id
 
-  useEffect(() => {
-    if (profile?.username) document.title = profile.username + ' 的个人资料 - BlogHub'
-  }, [profile])
+  useSEO({
+    title: profile?.username ? profile.username + ' 的个人资料 - BlogHub' : 'BlogHub',
+    description: profile?.bio || (profile?.username ? profile.username + ' 的博客个人主页' : ''),
+  })
 
   useEffect(() => {
     const fetchData = async () => {

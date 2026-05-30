@@ -62,6 +62,7 @@ function normalizePost(p) {
     commentCount: p.comment_count ?? 0,
     isPinned: Boolean(p.is_pinned),
     status: p.status || 'published',
+    scheduledAt: p.scheduled_at || null,
     likes: typeof p.likes === 'string' ? JSON.parse(p.likes) : (p.likes || []),
     favorites: typeof p.favorites === 'string' ? JSON.parse(p.favorites) : (p.favorites || []),
     createdAt: p.created_at,

@@ -12,6 +12,7 @@ import BlogDetail from './pages/BlogDetail'
 import Editor from './pages/Editor'
 import About from './pages/About'
 import ForgotPassword from './pages/ForgotPassword'
+import Admin from './pages/Admin'
 
 export default function App() {
   return (
@@ -31,6 +32,7 @@ export default function App() {
             <Route path="profile/:id" element={<Profile />} />
             <Route path="settings" element={<Settings />} />
             <Route path="about" element={<About />} />
+            <Route path="admin" element={<Admin />} />
           </Route>
         </Routes>
       </AuthProvider>

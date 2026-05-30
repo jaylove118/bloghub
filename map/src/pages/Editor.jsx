@@ -43,7 +43,8 @@ export default function Editor() {
     coverImage: '',
     category: 'tech',
     tags: [],
-    status: 'published'
+    status: 'published',
+    scheduledAt: ''
   })
   const [tagInput, setTagInput] = useState('')
   const [loading, setLoading] = useState(false)
@@ -97,7 +98,8 @@ export default function Editor() {
             coverImage: post.coverImage || '',
             category: post.category,
             tags: post.tags || [],
-            status: post.status || 'published'
+            status: post.status || 'published',
+            scheduledAt: post.scheduledAt ? new Date(post.scheduledAt).toISOString().slice(0, 16) : ''
           })
         }
       }
@@ -190,6 +192,7 @@ export default function Editor() {
       const postData = {
         ...formData,
         status: publishStatus,
+        scheduledAt: formData.scheduledAt ? new Date(formData.scheduledAt).toISOString() : null,
         authorId: user.id,
         excerpt: formData.excerpt || formData.content.replace(/[#*`]/g, '').slice(0, 150)
       }
@@ -365,8 +368,21 @@ export default function Editor() {
                 </select>
               </div>
 
+              <div className="w-full sm:w-auto">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  定时发布（可选）
+                </label>
+                <input
+                  type="datetime-local"
+                  value={formData.scheduledAt}
+                  onChange={(e) => handleChange({ scheduledAt: e.target.value })}
+                  min={new Date().toISOString().slice(0, 16)}
+                  className="w-full sm:w-auto px-4 py-2 border border-gray-200 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-xl focus:outline-none focus:border-primary"
+                />
+              </div>
+
               <div className="flex-1 min-w-[200px]">
-                <label className="block text-sm font-medium text-gray-700 mb-2">封面图</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">封面图</label>
                 <div className="flex gap-2">
                   <input
                     type="text"
