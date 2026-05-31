@@ -16,7 +16,6 @@ function getTransporter() {
 export async function sendEmail({ to, subject, html }) {
   const transporter = getTransporter()
   if (!transporter) {
-    console.log('[Email] SMTP not configured. Would send:', { to, subject })
     return false
   }
   try {
@@ -28,7 +27,6 @@ export async function sendEmail({ to, subject, html }) {
     })
     return true
   } catch (err) {
-    console.error('[Email] Send failed:', err.message)
     return false
   }
 }

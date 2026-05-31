@@ -19,8 +19,7 @@ async function init() {
   });
 
   await conn.query(sql);
-  console.log('Database initialized successfully.');
   await conn.end();
 }
 
-init().catch(console.error);
+init().catch(() => process.exit(1));
