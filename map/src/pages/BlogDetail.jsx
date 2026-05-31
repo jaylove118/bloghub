@@ -12,6 +12,7 @@ import TableOfContents from '../components/TableOfContents'
 import { ShareButtons, CodeCopyButton } from '../components/ShareButtons'
 import RelatedPosts from '../components/RelatedPosts'
 import { ReadingProgress, BackToTop } from '../components/ReadingProgress'
+import { handleError } from '../utils/errors'
 
 export default function BlogDetail() {
   const { id } = useParams()
@@ -24,6 +25,7 @@ export default function BlogDetail() {
   const [loading, setLoading] = useState(true)
   const [liking, setLiking] = useState(false)
   const [commentLoading, setCommentLoading] = useState(false)
+  const [error, setError] = useState(null)
 
   const isAuthor = user?.id === post?.authorId
 
@@ -77,7 +79,7 @@ export default function BlogDetail() {
       const newFavorites = await api.posts.favorite(id)
       setPost({ ...post, favorites: newFavorites })
     } catch (error) {
-      console.error(error)
+      handleError(error, setError)
     }
   }
 
@@ -86,7 +88,7 @@ export default function BlogDetail() {
       const newPinned = await api.posts.pin(id)
       setPost({ ...post, isPinned: newPinned })
     } catch (error) {
-      console.error(error)
+      handleError(error, setError)
     }
   }
 
@@ -96,7 +98,7 @@ export default function BlogDetail() {
       await api.posts.delete(id)
       navigate('/blogs')
     } catch (error) {
-      console.error(error)
+      handleError(error, setError)
     }
   }
 
@@ -127,7 +129,7 @@ export default function BlogDetail() {
       await api.comments.delete(commentId)
       setComments(comments.filter(c => c.id !== commentId && c.parentId !== commentId))
     } catch (error) {
-      console.error(error)
+      handleError(error, setError)
     }
   }
 
@@ -145,7 +147,7 @@ export default function BlogDetail() {
       })
       setComments([...comments, reply])
     } catch (error) {
-      console.error(error)
+      handleError(error, setError)
     }
   }
 
@@ -158,7 +160,7 @@ export default function BlogDetail() {
       const newLikes = await api.comments.like(commentId)
       setComments(comments.map(c => c.id === commentId ? { ...c, likes: newLikes } : c))
     } catch (error) {
-      console.error(error)
+      handleError(error, setError)
     }
   }
 
@@ -184,6 +186,12 @@ export default function BlogDetail() {
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
+      {error && (
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4">
+          {error}
+          <button onClick={() => setError(null)} className="ml-2 font-bold">&times;</button>
+        </div>
+      )}
       <Link to="/blogs" className="inline-flex items-center gap-1 text-gray-600 hover:text-primary mb-6">
         <ArrowLeft size={18} />
         返回列表

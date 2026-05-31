@@ -4,6 +4,7 @@ import { api } from '../context/api'
 import { User, Mail, Lock, Save, ArrowLeft, Key } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { avatarTypes } from '../utils/constants'
+import { handleError } from '../utils/errors'
 
 export default function Settings() {
   useEffect(() => { document.title = '账户设置 - BlogHub' }, [])
@@ -18,6 +19,7 @@ export default function Settings() {
   })
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(false)
+  const [error, setError] = useState(null)
 
   const [pwData, setPwData] = useState({ oldPassword: '', newPassword: '', confirmPassword: '' })
   const [pwLoading, setPwLoading] = useState(false)
@@ -42,7 +44,7 @@ export default function Settings() {
       setSuccess(true)
       setTimeout(() => setSuccess(false), 3000)
     } catch (error) {
-      console.error(error)
+      handleError(error, setError)
     } finally {
       setLoading(false)
     }

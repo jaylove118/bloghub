@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext'
 import { ArrowLeft, Eye, Image, X, RotateCcw, Check, FileText, Send, Bold, Italic, Code, Quote, List, Heading, Columns } from 'lucide-react'
 import { parseMarkdown } from '../lib/index'
 import { categoryOptions } from '../utils/constants'
+import { handleError } from '../utils/errors'
 
 const DRAFT_KEY = 'bloghub_editor_draft'
 
@@ -53,6 +54,7 @@ export default function Editor() {
   const [imageUploading, setImageUploading] = useState(false)
   const [showDraftBanner, setShowDraftBanner] = useState(false)
   const [draftSaved, setDraftSaved] = useState(false)
+  const [saveError, setSaveError] = useState(null)
 
   const draftTimerRef = useRef(null)
   const textareaRef = useRef(null)
@@ -173,7 +175,7 @@ export default function Editor() {
       } else {
         alert(data.message || '上传失败')
       }
-    } catch {
+    } catch (err) {
       alert('图片上传失败')
     } finally {
       setImageUploading(false)
@@ -211,8 +213,7 @@ export default function Editor() {
         return
       }
     } catch (error) {
-      console.error(error)
-      alert('保存失败')
+      handleError(error, setSaveError)
     } finally {
       setLoading(false)
     }
@@ -320,6 +321,12 @@ export default function Editor() {
       )}
 
       <div className="max-w-5xl mx-auto px-4 py-8">
+        {saveError && (
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4">
+            {saveError}
+            <button onClick={() => setSaveError(null)} className="ml-2 font-bold">&times;</button>
+          </div>
+        )}
         {preview ? (
           <div className="bg-white rounded-2xl p-8">
             <h1 className="text-3xl font-bold mb-4">{formData.title || '无标题'}</h1>
