@@ -32,15 +32,16 @@ const __dirname = dirname(fileURLToPath(import.meta.url))
 app.set('trust proxy', 1)
 
 app.use(helmet({
-  contentSecurityPolicy: {
+  contentSecurityPolicy: process.env.NODE_ENV === 'production' ? {
     directives: {
       defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "'unsafe-inline'"],
-      styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
+      scriptSrc: ["'self'"],
+      styleSrc: ["'self'", 'https://fonts.googleapis.com'],
       fontSrc: ["'self'", 'https://fonts.gstatic.com'],
       imgSrc: ["'self'", 'data:', 'blob:'],
+      connectSrc: ["'self'"],
     },
-  },
+  } : false,
   hsts: process.env.NODE_ENV === 'production',
 }))
 
