@@ -13,23 +13,40 @@ export default function Home() {
   const [posts, setPosts] = useState([])
   const [featuredPost, setFeaturedPost] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
 
   useSEO({ title: 'BlogHub - 全功能博客平台', description: '加入我们，分享你的想法和经验。支持 Markdown 写作、社区互动的全功能博客平台。' })
 
   useEffect(() => {
     const fetchPosts = async () => {
-      const { posts: data } = await api.posts.getAll()
-      setPosts(data)
-      if (data.length > 0) {
-        setFeaturedPost(data[0])
+      try {
+        setError(null)
+        const { posts: data } = await api.posts.getAll({ limit: 20 })
+        setPosts(data)
+        if (data.length > 0) {
+          const pinned = data.find(p => p.isPinned)
+          setFeaturedPost(pinned || data[0])
+        }
+      } catch (err) {
+        setError('加载失败，请稍后重试')
+      } finally {
+        setLoading(false)
       }
-      setLoading(false)
     }
     fetchPosts()
   }, [])
 
   if (loading) {
     return <LoadingSpinner />
+  }
+
+  if (error) {
+    return (
+      <div className="text-center py-20">
+        <p className="text-red-500 mb-4">{error}</p>
+        <button onClick={() => window.location.reload()} className="text-primary hover:underline">重试</button>
+      </div>
+    )
   }
 
   return (

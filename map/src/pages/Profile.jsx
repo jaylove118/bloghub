@@ -108,7 +108,7 @@ export default function Profile() {
       </div>
 
       <div className="mt-8">
-        <h2 className="text-xl font-bold mb-6">他的文章</h2>
+        <h2 className="text-xl font-bold mb-6">{profile?.username || '用户'} 的文章</h2>
         {posts.length === 0 ? (
           <div className="text-center py-12 bg-white rounded-2xl">
             <p className="text-gray-500">还没有发布文章</p>

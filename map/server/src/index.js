@@ -4,6 +4,7 @@ import dotenv from 'dotenv'
 import cookieParser from 'cookie-parser'
 import swaggerUi from 'swagger-ui-express'
 import rateLimit from 'express-rate-limit'
+import helmet from 'helmet'
 import { fileURLToPath } from 'url'
 import { dirname, join } from 'path'
 import pool from './config/db.js'
@@ -14,13 +15,34 @@ import userRoutes from './routes/users.js'
 import uploadRoutes from './routes/upload.js'
 import notificationRoutes from './routes/notifications.js'
 import subscriberRoutes from './routes/subscribers.js'
+import { authRequired } from './middleware/auth.js'
 import swaggerDoc from './config/swagger.js'
 
 dotenv.config({ path: new URL('../.env', import.meta.url) })
 
+if (!process.env.JWT_SECRET) {
+  console.error('FATAL: JWT_SECRET environment variable is not set')
+  process.exit(1)
+}
+
 const app = express()
 const PORT = process.env.PORT || 3001
 const __dirname = dirname(fileURLToPath(import.meta.url))
+
+app.set('trust proxy', 1)
+
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'"],
+      styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
+      fontSrc: ["'self'", 'https://fonts.gstatic.com'],
+      imgSrc: ["'self'", 'data:', 'blob:'],
+    },
+  },
+  hsts: process.env.NODE_ENV === 'production',
+}))
 
 const allowedOrigins = process.env.ALLOWED_ORIGINS
   ? process.env.ALLOWED_ORIGINS.split(',')
@@ -53,6 +75,25 @@ const authLimiter = rateLimit({
 
 app.use('/api/auth/login', authLimiter)
 app.use('/api/auth/register', authLimiter)
+
+const commentLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { message: '评论过于频繁，请稍后再试' },
+})
+
+const resetLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { message: '重置请求过于频繁，请稍后再试' },
+})
+
+app.use('/api/auth/forgot-password', resetLimiter)
+app.use('/api/comments', commentLimiter)
 
 app.use('/api/auth', authRoutes)
 app.use('/api/posts', postRoutes)
@@ -98,7 +139,7 @@ app.get('/api/sitemap.txt', async (_req, res) => {
   } catch { res.status(500).json({ message: 'Sitemap生成失败' }) }
 })
 
-app.get('/api/admin/analytics', async (_req, res) => {
+app.get('/api/admin/analytics', authRequired, async (_req, res) => {
   try {
     const [daily] = await pool.query(
       "SELECT DATE(created_at) AS date, COUNT(*) AS views FROM analytics_views WHERE created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY) GROUP BY DATE(created_at) ORDER BY date"
@@ -110,14 +151,14 @@ app.get('/api/admin/analytics', async (_req, res) => {
   } catch { res.json({ daily: [], topReferrers: [] }) }
 })
 
-app.get('/api/subscribers', async (_req, res) => {
+app.get('/api/subscribers', authRequired, async (_req, res) => {
   try {
     const [rows] = await pool.query('SELECT * FROM subscribers ORDER BY created_at DESC')
     res.json({ subscribers: rows })
   } catch { res.json({ subscribers: [] }) }
 })
 
-app.get('/api/admin/stats', async (_req, res) => {
+app.get('/api/admin/stats', authRequired, async (_req, res) => {
   try {
     const [[{ totalPosts }]] = await pool.query("SELECT COUNT(*) AS totalPosts FROM posts WHERE status = 'published'")
     const [[{ totalUsers }]] = await pool.query("SELECT COUNT(*) AS totalUsers FROM users")

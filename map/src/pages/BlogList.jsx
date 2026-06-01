@@ -15,6 +15,7 @@ export default function BlogList() {
   const [searchInput, setSearchInput] = useState('')
   const [page, setPage] = useState(1)
   const [pagination, setPagination] = useState({ page: 1, limit: 20, total: 0 })
+  const [error, setError] = useState(null)
 
   const category = searchParams.get('category') || ''
   const tagsStr = searchParams.get('tags') || ''
@@ -23,15 +24,21 @@ export default function BlogList() {
 
   useEffect(() => {
     const fetchPosts = async () => {
-      setLoading(true)
-      const filters = { page, limit: 12 }
-      if (search) filters.search = search
-      if (category) filters.category = category
-      if (tags.length) filters.tags = tags.join(',')
-      const result = await api.posts.getAll(filters)
-      setPosts(result.posts)
-      setPagination(result.pagination)
-      setLoading(false)
+      try {
+        setLoading(true)
+        setError(null)
+        const filters = { page, limit: 12 }
+        if (search) filters.search = search
+        if (category) filters.category = category
+        if (tags.length) filters.tags = tags.join(',')
+        const result = await api.posts.getAll(filters)
+        setPosts(result.posts)
+        setPagination(result.pagination)
+      } catch (err) {
+        setError('加载文章列表失败')
+      } finally {
+        setLoading(false)
+      }
     }
     fetchPosts()
   }, [search, category, tagsStr, page])
@@ -158,7 +165,12 @@ export default function BlogList() {
         </button>
       )}
 
-      {loading ? (
+      {error ? (
+        <div className="text-center py-16 bg-white dark:bg-gray-800 rounded-2xl">
+          <p className="text-red-500 mb-4">{error}</p>
+          <button onClick={() => window.location.reload()} className="text-primary hover:underline">重试</button>
+        </div>
+      ) : loading ? (
         <LoadingSpinner className="h-64" />
       ) : posts.length === 0 ? (
         <div className="text-center py-16 bg-white dark:bg-gray-800 rounded-2xl">

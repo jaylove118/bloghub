@@ -9,8 +9,10 @@ const pool = mysql.createPool({
   user: process.env.DB_USER || 'root',
   password: process.env.DB_PASSWORD || '',
   database: process.env.DB_NAME || 'bloghub',
+  charset: 'utf8mb4',
   waitForConnections: true,
   connectionLimit: 10,
+  connectTimeout: 5000,
 });
 
 export default pool;

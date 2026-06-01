@@ -14,7 +14,7 @@ router.post('/subscribe', validate({ email: { required: true, max: 100 } }), asy
       [email, token, token]
     )
     // In production, send verification email here
-    res.json({ message: '订阅成功，请查看邮箱确认', token })
+    res.json({ message: '订阅成功，请查看邮箱确认' })
   } catch (err) {
     next(err)
   }

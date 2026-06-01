@@ -8,6 +8,7 @@ import { categoryMap, formatFullDate, readingTime } from '../utils/constants'
 import { useSEO } from '../hooks/useSEO'
 import LoadingSpinner from '../components/LoadingSpinner'
 import SyntaxHighlight from '../components/SyntaxHighlight'
+import DOMPurify from 'dompurify'
 import TableOfContents from '../components/TableOfContents'
 import { ShareButtons, CodeCopyButton } from '../components/ShareButtons'
 import RelatedPosts from '../components/RelatedPosts'
@@ -40,18 +41,24 @@ export default function BlogDetail() {
 
   useEffect(() => {
     const fetchData = async () => {
-      setLoading(true)
-      const postData = await api.posts.getById(id)
-      setPost(postData)
-      if (postData?.authorId) {
-        const authorData = await api.users.getById(postData.authorId)
-        setAuthor(authorData)
+      try {
+        setLoading(true)
+        setError(null)
+        const postData = await api.posts.getById(id)
+        setPost(postData)
+        if (postData?.authorId) {
+          const authorData = await api.users.getById(postData.authorId)
+          setAuthor(authorData)
+        }
+        if (postData?.id) {
+          const commentsData = await api.comments.getByPostId(postData.id)
+          setComments(commentsData)
+        }
+      } catch (err) {
+        setError(err.message || '加载失败，请稍后重试')
+      } finally {
+        setLoading(false)
       }
-      if (postData?.id) {
-        const commentsData = await api.comments.getByPostId(postData.id)
-        setComments(commentsData)
-      }
-      setLoading(false)
     }
     fetchData()
   }, [id])
@@ -168,6 +175,15 @@ export default function BlogDetail() {
     return <LoadingSpinner />
   }
 
+  if (error && !post) {
+    return (
+      <div className="text-center py-20">
+        <p className="text-red-500 mb-4">{error}</p>
+        <button onClick={() => window.location.reload()} className="text-primary hover:underline">重试</button>
+      </div>
+    )
+  }
+
   const isLiked = user && post?.likes?.includes(user.id)
   const isFavorited = user && post?.favorites?.includes(user.id)
 
@@ -253,7 +269,7 @@ export default function BlogDetail() {
           <div className="flex gap-8">
             <div className="flex-1 min-w-0">
               <SyntaxHighlight>
-                <div className="prose max-w-none mb-8" dangerouslySetInnerHTML={{ __html: parseMarkdown(displayContent) }} />
+                <div className="prose max-w-none mb-8" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(parseMarkdown(displayContent)) }} />
               </SyntaxHighlight>
               <CodeCopyButton />
             </div>

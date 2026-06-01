@@ -10,6 +10,7 @@ import BlogList from './pages/BlogList'
 import BlogDetail from './pages/BlogDetail'
 import About from './pages/About'
 import ForgotPassword from './pages/ForgotPassword'
+import NotFound from './pages/NotFound'
 
 const Profile = lazy(() => import('./pages/Profile'))
 const Settings = lazy(() => import('./pages/Settings'))
@@ -51,6 +52,7 @@ export default function App() {
             <Route path="admin" element={<Lazy><Admin /></Lazy>} />
             <Route path="oauth-callback" element={<Lazy><OAuthCallback /></Lazy>} />
             <Route path="media" element={<Lazy><MediaLibrary /></Lazy>} />
+            <Route path="*" element={<NotFound />} />
           </Route>
         </Routes>
       </AuthProvider>

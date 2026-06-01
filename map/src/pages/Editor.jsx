@@ -1,11 +1,12 @@
 import { useState, useEffect, useRef } from 'react'
-import { useParams, useNavigate, Link } from 'react-router-dom'
+import { useParams, useNavigate, Link, Navigate } from 'react-router-dom'
 import { api, TOKEN_KEY } from '../context/api'
 import { useAuth } from '../context/AuthContext'
 import { ArrowLeft, Eye, Image, X, RotateCcw, Check, FileText, Send, Bold, Italic, Code, Quote, List, Heading, Columns } from 'lucide-react'
 import { parseMarkdown } from '../lib/index'
 import { categoryOptions } from '../utils/constants'
 import { handleError } from '../utils/errors'
+import DOMPurify from 'dompurify'
 
 const DRAFT_KEY = 'bloghub_editor_draft'
 
@@ -219,7 +220,7 @@ export default function Editor() {
     }
   }
 
-  if (!user) return null
+  if (!user) return <Navigate to="/login" />
 
   return (
     <div className="min-h-[calc(100vh-4rem)]">
@@ -345,7 +346,7 @@ export default function Editor() {
                 className="w-full h-64 object-cover rounded-xl mb-6"
               />
             )}
-            <div className="prose" dangerouslySetInnerHTML={{ __html: parseMarkdown(formData.content) }} />
+            <div className="prose" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(parseMarkdown(formData.content)) }} />
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-6">
@@ -500,7 +501,7 @@ export default function Editor() {
                     className={`${splitView ? 'w-full md:w-1/2 md:border-r border-b md:border-b-0 border-gray-200 dark:border-gray-600' : 'w-full'} h-96 p-4 focus:outline-none resize-none font-mono bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100`}
                   />
                   {splitView && (
-                    <div className="w-full md:w-1/2 h-96 p-4 overflow-y-auto prose bg-gray-50 dark:bg-gray-800" dangerouslySetInnerHTML={{ __html: parseMarkdown(formData.content) || '<p class="text-gray-400">预览将在此显示...</p>' }} />
+                    <div className="w-full md:w-1/2 h-96 p-4 overflow-y-auto prose bg-gray-50 dark:bg-gray-800" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(parseMarkdown(formData.content)) || '<p class="text-gray-400">预览将在此显示...</p>' }} />
                   )}
                 </div>
               </div>

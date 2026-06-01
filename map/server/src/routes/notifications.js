@@ -29,7 +29,7 @@ router.put('/:id/read', authRequired, async (req, res, next) => {
       'UPDATE notifications SET is_read = 1 WHERE id = ? AND user_id = ?',
       [req.params.id, req.userId]
     )
-    if (result.affectedRows === 0) throw AppError(404, '通知不存在')
+    if (result.affectedRows === 0) throw new AppError(404, '通知不存在')
     res.json({ success: true })
   } catch (err) {
     next(err)

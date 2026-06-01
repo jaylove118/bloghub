@@ -1,5 +1,5 @@
-import { createContext, useContext, useReducer, useEffect } from 'react'
-import { api } from './api'
+import { createContext, useContext, useReducer, useEffect, useCallback } from 'react'
+import { api, setToken, clearToken } from './api'
 
 const AuthContext = createContext(null)
 
@@ -72,6 +72,17 @@ export function AuthProvider({ children }) {
     dispatch({ type: 'LOGOUT' })
   }
 
+  const loginWithToken = useCallback(async (token) => {
+    setToken(token)
+    try {
+      const user = await api.auth.getCurrentUser()
+      dispatch({ type: 'SET_USER', payload: user })
+    } catch {
+      clearToken()
+      dispatch({ type: 'SET_USER', payload: null })
+    }
+  }, [])
+
   const updateProfile = async (updates) => {
     const updatedUser = await api.auth.updateProfile(updates)
     dispatch({ type: 'UPDATE_USER', payload: updatedUser })
@@ -79,7 +90,7 @@ export function AuthProvider({ children }) {
   }
 
   return (
-    <AuthContext.Provider value={{ ...state, login, register, logout, updateProfile }}>
+    <AuthContext.Provider value={{ ...state, login, register, logout, loginWithToken, updateProfile }}>
       {children}
     </AuthContext.Provider>
   )

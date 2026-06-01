@@ -5,6 +5,7 @@ import { fileURLToPath } from 'url'
 import { dirname } from 'path'
 import { randomUUID } from 'crypto'
 import { readdirSync, unlinkSync, existsSync, statSync } from 'fs'
+import { basename } from 'path'
 import { authRequired } from '../middleware/auth.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
@@ -76,7 +77,8 @@ router.post('/', authRequired, upload.single('image'), async (req, res) => {
 })
 
 router.delete('/:filename', authRequired, (req, res) => {
-  const filepath = join(uploadsDir, req.params.filename)
+  const safeFilename = basename(req.params.filename)
+  const filepath = join(uploadsDir, safeFilename)
   if (!existsSync(filepath)) {
     return res.status(404).json({ message: '文件不存在' })
   }

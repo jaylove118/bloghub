@@ -100,7 +100,7 @@ router.get('/:idOrSlug', async (req, res, next) => {
     )
 
     if (rows.length === 0) {
-      throw AppError(404, '文章不存在')
+      throw new AppError(404, '文章不存在')
     }
 
     const post = rows[0]
@@ -159,10 +159,10 @@ router.put('/:id', authRequired, postValidation, async (req, res, next) => {
 
     const [existing] = await pool.query('SELECT * FROM posts WHERE id = ?', [id])
     if (existing.length === 0) {
-      throw AppError(404, '文章不存在')
+      throw new AppError(404, '文章不存在')
     }
     if (existing[0].author_id !== req.userId) {
-      throw AppError(403, '无权修改他人文章')
+      throw new AppError(403, '无权修改他人文章')
     }
 
     // Save revision before update
@@ -200,10 +200,10 @@ router.delete('/:id', authRequired, async (req, res, next) => {
     const { id } = req.params
     const [existing] = await pool.query('SELECT * FROM posts WHERE id = ?', [id])
     if (existing.length === 0) {
-      throw AppError(404, '文章不存在')
+      throw new AppError(404, '文章不存在')
     }
     if (existing[0].author_id !== req.userId) {
-      throw AppError(403, '无权删除他人文章')
+      throw new AppError(403, '无权删除他人文章')
     }
     await pool.query('DELETE FROM posts WHERE id = ?', [id])
     res.json({ success: true })
@@ -229,11 +229,11 @@ router.post('/:id/restore/:revId', authRequired, async (req, res, next) => {
   try {
     const { id, revId } = req.params
     const [existing] = await pool.query('SELECT * FROM posts WHERE id = ?', [id])
-    if (existing.length === 0) throw AppError(404, '文章不存在')
-    if (existing[0].author_id !== req.userId) throw AppError(403, '无权操作')
+    if (existing.length === 0) throw new AppError(404, '文章不存在')
+    if (existing[0].author_id !== req.userId) throw new AppError(403, '无权操作')
 
     const [revs] = await pool.query('SELECT * FROM post_revisions WHERE id = ? AND post_id = ?', [revId, id])
-    if (revs.length === 0) throw AppError(404, '版本不存在')
+    if (revs.length === 0) throw new AppError(404, '版本不存在')
 
     // Save current as revision before restoring
     await pool.query(
@@ -258,7 +258,7 @@ router.post('/:id/like', authRequired, async (req, res, next) => {
     const [rows] = await conn.query('SELECT likes, author_id, title FROM posts WHERE id = ? FOR UPDATE', [id])
     if (rows.length === 0) {
       await conn.rollback()
-      throw AppError(404, '文章不存在')
+      throw new AppError(404, '文章不存在')
     }
 
     let likes = typeof rows[0].likes === 'string' ? JSON.parse(rows[0].likes) : (rows[0].likes || [])
@@ -299,7 +299,7 @@ router.post('/:id/favorite', authRequired, async (req, res, next) => {
     const [rows] = await conn.query('SELECT favorites FROM posts WHERE id = ? FOR UPDATE', [id])
     if (rows.length === 0) {
       await conn.rollback()
-      throw AppError(404, '文章不存在')
+      throw new AppError(404, '文章不存在')
     }
 
     let favorites = typeof rows[0].favorites === 'string' ? JSON.parse(rows[0].favorites) : (rows[0].favorites || [])
@@ -340,8 +340,8 @@ router.put('/:id/pin', authRequired, async (req, res, next) => {
   try {
     const { id } = req.params
     const [existing] = await pool.query('SELECT author_id, is_pinned FROM posts WHERE id = ?', [id])
-    if (existing.length === 0) throw AppError(404, '文章不存在')
-    if (existing[0].author_id !== req.userId) throw AppError(403, '无权操作他人文章')
+    if (existing.length === 0) throw new AppError(404, '文章不存在')
+    if (existing[0].author_id !== req.userId) throw new AppError(403, '无权操作他人文章')
 
     const newPinned = existing[0].is_pinned ? 0 : 1
     await pool.query('UPDATE posts SET is_pinned = ? WHERE id = ?', [newPinned, id])

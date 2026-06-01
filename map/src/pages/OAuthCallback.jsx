@@ -1,30 +1,37 @@
 import { useEffect, useState } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
-import { TOKEN_KEY } from '../context/api'
+import { useNavigate } from 'react-router-dom'
+import { useAuth } from '../context/AuthContext'
+
+function getCookie(name) {
+  const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'))
+  return match ? decodeURIComponent(match[2]) : null
+}
 
 export default function OAuthCallback() {
-  const [searchParams] = useSearchParams()
+  const { loginWithToken } = useAuth()
   const navigate = useNavigate()
   const [error, setError] = useState('')
 
   useEffect(() => {
-    const token = searchParams.get('token')
-    if (token) {
-      localStorage.setItem(TOKEN_KEY, token)
-      navigate('/')
-      window.location.reload()
-    } else {
-      setError('授权失败，请重试')
-      setTimeout(() => navigate('/login'), 3000)
+    const token = getCookie('oauth_token')
+    if (!token) {
+      setError('授权失败，请重新登录')
+      return
     }
-  }, [searchParams, navigate])
+    loginWithToken(token).then(() => {
+      document.cookie = 'oauth_token=; max-age=0; path=/'
+      navigate('/')
+    }).catch(() => {
+      setError('授权失败，请重试')
+    })
+  }, [loginWithToken, navigate])
 
   if (error) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <p className="text-red-500 mb-4">{error}</p>
-          <p className="text-gray-500">3秒后返回登录页...</p>
+          <a href="/login" className="text-primary hover:underline">返回登录</a>
         </div>
       </div>
     )

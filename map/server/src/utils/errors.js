@@ -1,5 +1,6 @@
-export function AppError(status, message) {
-  const err = new Error(message)
-  err.status = status
-  return err
+export class AppError extends Error {
+  constructor(status, message) {
+    super(message)
+    this.status = status
+  }
 }

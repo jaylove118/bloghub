@@ -6,4 +6,10 @@ server/uploads/*
 server/.env
 *.log
 .DS_Store
+.env.local
+.env.production
+*.pem
+*.key
+.vscode/
+.idea/
 backend-cpp/build/

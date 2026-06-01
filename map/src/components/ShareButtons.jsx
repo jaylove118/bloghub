@@ -85,37 +85,35 @@ export function ShareButtons({ title, url }) {
 }
 
 export function CodeCopyButton() {
-  const [copied, setCopied] = useState(null)
+  const [copiedId, setCopiedId] = useState(null)
 
   useEffect(() => {
     const handler = (e) => {
       const pre = e.target.closest('pre')
       if (!pre) return
 
-      let btn = pre.querySelector('.code-copy-btn')
-      if (!btn) {
-        btn = document.createElement('button')
+      if (!pre.querySelector('.code-copy-btn')) {
+        const btn = document.createElement('button')
         btn.className = 'code-copy-btn absolute top-2 right-2 p-1.5 rounded bg-gray-700 hover:bg-gray-600 text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity text-xs'
-        btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>'
+        btn.textContent = '复制'
         pre.style.position = 'relative'
         pre.classList.add('group')
         pre.appendChild(btn)
 
-        btn.addEventListener('click', () => {
+        btn.addEventListener('click', async () => {
           const code = pre.querySelector('code')
           if (code) {
-            navigator.clipboard.writeText(code.textContent).then(() => {
-              btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>'
-              setTimeout(() => {
-                btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>'
-              }, 2000)
-            })
+            try {
+              await navigator.clipboard.writeText(code.textContent)
+              btn.textContent = '已复制'
+              setTimeout(() => { btn.textContent = '复制' }, 2000)
+            } catch {}
           }
         })
       }
     }
 
-    document.addEventListener('mouseover', handler)
+    document.addEventListener('mouseover', handler, { passive: true })
     return () => document.removeEventListener('mouseover', handler)
   }, [])
 

@@ -74,10 +74,10 @@ router.delete('/:id', authRequired, async (req, res, next) => {
   try {
     const [rows] = await pool.query('SELECT user_id FROM comments WHERE id = ?', [req.params.id])
     if (rows.length === 0) {
-      throw AppError(404, '评论不存在')
+      throw new AppError(404, '评论不存在')
     }
     if (rows[0].user_id !== req.userId) {
-      throw AppError(403, '无权删除他人评论')
+      throw new AppError(403, '无权删除他人评论')
     }
     await pool.query(
       'DELETE FROM comments WHERE id = ? OR parent_id = ?',
@@ -97,7 +97,7 @@ router.post('/:id/like', authRequired, async (req, res, next) => {
     const [rows] = await conn.query('SELECT likes, user_id, content FROM comments WHERE id = ? FOR UPDATE', [req.params.id])
     if (rows.length === 0) {
       await conn.rollback()
-      throw AppError(404, '评论不存在')
+      throw new AppError(404, '评论不存在')
     }
 
     let likes = typeof rows[0].likes === 'string' ? JSON.parse(rows[0].likes) : (rows[0].likes || [])

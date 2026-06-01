@@ -83,7 +83,7 @@ describe('E2E Smoke Tests', () => {
     // 10. Subscriber flow
     const r10 = await request(app).post('/api/subscribers/subscribe').send({ email: 'sub_' + Date.now() + '@test.com' })
     expect(r10.status).toBe(200)
-    expect(r10.body.token).toBeDefined()
+    expect(r10.body.message).toBeDefined()
 
     // 11. Revisions
     const r11 = await request(app).get('/api/posts/' + postId + '/revisions')
