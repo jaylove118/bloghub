@@ -86,6 +86,8 @@ function normalizeComment(c) {
 }
 
 export const api = {
+  request,
+
   auth: {
     async register(userData) {
       const data = await request('/auth/register', {

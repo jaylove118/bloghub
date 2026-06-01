@@ -31,7 +31,7 @@ export default function BlogDetail() {
   const isAuthor = user?.id === post?.authorId
 
   const tocData = TableOfContents({ content: post?.content || '' })
-  const displayContent = tocData.addIds ? tocData.addIds(post?.content || '') : post?.content || ''
+  const displayContent = tocData?.addIds ? tocData.addIds(post?.content || '') : post?.content || ''
 
   useSEO({
     title: post?.title ? post.title + ' - BlogHub' : 'BlogHub',

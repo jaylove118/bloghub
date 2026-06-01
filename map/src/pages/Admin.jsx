@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { Eye, Users, FileText, MessageCircle, TrendingUp, Mail, Trash2 } from 'lucide-react'
 import { useSEO } from '../hooks/useSEO'
 import LoadingSpinner from '../components/LoadingSpinner'
+import { api } from '../context/api'
 
 function SimpleBarChart({ data, labelKey, valueKey, color = 'bg-primary' }) {
   const max = Math.max(...data.map(d => d[valueKey]), 1)
@@ -32,26 +33,30 @@ export default function Admin() {
   const [analytics, setAnalytics] = useState({ daily: [], topReferrers: [] })
 
   useEffect(() => {
-    Promise.all([
-      fetch('/api/admin/stats').then(r => r.json()),
-      fetch('/api/subscribers').then(r => r.json()),
-      fetch('/api/admin/analytics').then(r => r.json()).catch(() => ({ daily: [], topReferrers: [] })),
-    ]).then(([s, sub, ana]) => {
-      setStats(s)
-      setSubscribers(sub.subscribers || [])
-      setAnalytics(ana)
+    (async () => {
+      try {
+        const [statsRes, subRes, anaRes] = await Promise.allSettled([
+          api.request('/admin/stats'),
+          api.request('/subscribers'),
+          api.request('/admin/analytics'),
+        ])
+        setStats(statsRes.status === 'fulfilled' ? statsRes.value : null)
+        setSubscribers(subRes.status === 'fulfilled' ? (subRes.value.subscribers || []) : [])
+        setAnalytics(anaRes.status === 'fulfilled' ? anaRes.value : { daily: [], topReferrers: [] })
+      } catch {}
       setLoading(false)
-    }).catch(() => setLoading(false))
+    })()
   }, [])
 
   const handleDeleteSubscriber = async (email) => {
     if (!window.confirm('确定删除这个订阅者？')) return
-    await fetch('/api/subscribers/unsubscribe', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email }),
-    })
-    setSubscribers(prev => prev.filter(s => s.email !== email))
+    try {
+      await api.request('/subscribers/unsubscribe', {
+        method: 'POST',
+        body: JSON.stringify({ email }),
+      })
+      setSubscribers(prev => prev.filter(s => s.email !== email))
+    } catch {}
   }
 
   if (loading) return <LoadingSpinner />
