@@ -9,7 +9,7 @@ import { useSEO } from '../hooks/useSEO'
 import LoadingSpinner from '../components/LoadingSpinner'
 import SyntaxHighlight from '../components/SyntaxHighlight'
 import DOMPurify from 'dompurify'
-import TableOfContents from '../components/TableOfContents'
+import useTableOfContents from '../components/TableOfContents'
 import { ShareButtons, CodeCopyButton } from '../components/ShareButtons'
 import RelatedPosts from '../components/RelatedPosts'
 import { ReadingProgress, BackToTop } from '../components/ReadingProgress'
@@ -30,7 +30,7 @@ export default function BlogDetail() {
 
   const isAuthor = user?.id === post?.authorId
 
-  const tocData = TableOfContents({ content: post?.content || '' })
+  const tocData = useTableOfContents(post?.content || '')
   const displayContent = tocData?.addIds ? tocData.addIds(post?.content || '') : post?.content || ''
 
   useSEO({
@@ -191,7 +191,7 @@ export default function BlogDetail() {
     return (
       <>
         <div className="text-center py-16">
-          <p className="text-gray-500 mb-4">文章不存在</p>
+          <p className="text-gray-500 dark:text-gray-400 mb-4">文章不存在</p>
           <Link to="/blogs" className="text-primary hover:underline">返回列表</Link>
         </div>
         <ReadingProgress />
@@ -208,12 +208,12 @@ export default function BlogDetail() {
           <button onClick={() => setError(null)} className="ml-2 font-bold">&times;</button>
         </div>
       )}
-      <Link to="/blogs" className="inline-flex items-center gap-1 text-gray-600 hover:text-primary mb-6">
+      <Link to="/blogs" className="inline-flex items-center gap-1 text-gray-600 dark:text-gray-400 hover:text-primary mb-6">
         <ArrowLeft size={18} />
         返回列表
       </Link>
 
-      <article className="bg-white rounded-2xl overflow-hidden">
+      <article className="bg-white dark:bg-gray-800 rounded-2xl overflow-hidden">
         {post.coverImage && (
           <div className="aspect-video">
             <img
@@ -226,16 +226,16 @@ export default function BlogDetail() {
 
         <div className="p-6 md:p-8">
           <div className="flex items-center gap-2 mb-4">
-            <span className={`px-3 py-1 rounded-full text-sm ${categoryMap[post.category]?.color || 'bg-gray-100 text-gray-700'}`}>
+            <span className={`px-3 py-1 rounded-full text-sm ${categoryMap[post.category]?.color || 'bg-gray-100 text-gray-700 dark:text-gray-300'}`}>
               {categoryMap[post.category]?.icon} {categoryMap[post.category]?.name}
             </span>
             {post.isPinned && (
-              <span className="px-2 py-1 rounded-full text-xs bg-amber-100 text-amber-700 flex items-center gap-1">
+              <span className="px-2 py-1 rounded-full text-xs bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300 flex items-center gap-1">
                 <Pin size={12} /> 置顶
               </span>
             )}
             {post.tags?.map((tag) => (
-              <span key={tag} className="px-2 py-0.5 bg-gray-100 rounded text-sm text-gray-600">
+              <span key={tag} className="px-2 py-0.5 bg-gray-100 dark:bg-gray-700 rounded text-sm text-gray-600 dark:text-gray-300">
                 #{tag}
               </span>
             ))}
@@ -273,7 +273,7 @@ export default function BlogDetail() {
               </SyntaxHighlight>
               <CodeCopyButton />
             </div>
-            {tocData.toc && (
+            {tocData?.toc && (
               <aside className="hidden xl:block w-56 flex-shrink-0">
                 <div className="sticky top-24">{tocData.toc}</div>
               </aside>
@@ -347,7 +347,7 @@ export default function BlogDetail() {
               value={newComment}
               onChange={(e) => setNewComment(e.target.value)}
               placeholder="写下你的评论..."
-              className="w-full p-4 border border-gray-200 rounded-xl focus:outline-none focus:border-primary resize-none"
+              className="w-full p-4 border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-xl focus:outline-none focus:border-primary resize-none"
               rows={3}
             />
             <div className="flex justify-end mt-2">
@@ -361,8 +361,8 @@ export default function BlogDetail() {
             </div>
           </form>
         ) : (
-          <div className="mb-8 p-4 bg-gray-50 rounded-xl text-center">
-            <p className="text-gray-500">
+          <div className="mb-8 p-4 bg-gray-50 dark:bg-gray-700 rounded-xl text-center">
+            <p className="text-gray-500 dark:text-gray-400">
               <Link to="/login" className="text-primary hover:underline">登录</Link>
               后才能评论
             </p>
@@ -395,7 +395,7 @@ function CommentItem({ comment, replies, onDelete, onLike, currentUser, onReply 
   const isLiked = currentUser && comment.likes?.includes(currentUser.id)
 
   return (
-    <div className="bg-white rounded-xl p-4">
+    <div className="bg-white dark:bg-gray-800 rounded-xl p-4">
       <div className="flex gap-3">
         <img
           src={comment.avatar || 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + comment.userId}
@@ -405,29 +405,29 @@ function CommentItem({ comment, replies, onDelete, onLike, currentUser, onReply 
         <div className="flex-1">
           <div className="flex items-center gap-2">
             <span className="font-medium text-sm">{comment.username || '用户'}</span>
-            <span className="text-xs text-gray-500">
+            <span className="text-xs text-gray-500 dark:text-gray-400">
               {new Date(comment.createdAt).toLocaleDateString('zh-CN')}
             </span>
           </div>
-          <p className="mt-1 text-gray-700">{comment.content}</p>
+          <p className="mt-1 text-gray-700 dark:text-gray-300">{comment.content}</p>
           <div className="flex items-center gap-4 mt-2">
             <button
               onClick={() => onLike(comment.id)}
-              className={'flex items-center gap-1 text-sm ' + (isLiked ? 'text-red-500' : 'text-gray-500 hover:text-red-500')}
+              className={'flex items-center gap-1 text-sm ' + (isLiked ? 'text-red-500' : 'text-gray-500 dark:text-gray-400 hover:text-red-500')}
             >
               <Heart size={14} fill={isLiked ? 'currentColor' : 'none'} />
               {comment.likes?.length || 0}
             </button>
             <button
               onClick={() => setShowReply(!showReply)}
-              className="text-sm text-gray-500 hover:text-primary"
+              className="text-sm text-gray-500 dark:text-gray-400 hover:text-primary"
             >
               回复
             </button>
             {currentUser?.id === comment.userId && (
               <button
                 onClick={() => onDelete(comment.id)}
-                className="text-sm text-gray-500 hover:text-red-500"
+                className="text-sm text-gray-500 dark:text-gray-400 hover:text-red-500"
               >
                 删除
               </button>
@@ -471,11 +471,11 @@ function CommentItem({ comment, replies, onDelete, onLike, currentUser, onReply 
                   <div>
                     <div className="flex items-center gap-2">
                       <span className="font-medium text-sm">{reply.username || '用户'}</span>
-                      <span className="text-xs text-gray-500">
+                      <span className="text-xs text-gray-500 dark:text-gray-400">
                         {new Date(reply.createdAt).toLocaleDateString('zh-CN')}
                       </span>
                     </div>
-                    <p className="mt-1 text-sm text-gray-700">{reply.content}</p>
+                    <p className="mt-1 text-sm text-gray-700 dark:text-gray-300">{reply.content}</p>
                   </div>
                 </div>
               ))}

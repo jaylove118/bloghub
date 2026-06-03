@@ -85,36 +85,50 @@ export function ShareButtons({ title, url }) {
 }
 
 export function CodeCopyButton() {
-  const [copiedId, setCopiedId] = useState(null)
-
   useEffect(() => {
-    const handler = (e) => {
-      const pre = e.target.closest('pre')
-      if (!pre) return
+    const addedButtons = new Set()
+    const clickHandlers = new WeakMap()
 
-      if (!pre.querySelector('.code-copy-btn')) {
-        const btn = document.createElement('button')
-        btn.className = 'code-copy-btn absolute top-2 right-2 p-1.5 rounded bg-gray-700 hover:bg-gray-600 text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity text-xs'
-        btn.textContent = '复制'
-        pre.style.position = 'relative'
-        pre.classList.add('group')
-        pre.appendChild(btn)
+    const addCopyButton = (pre) => {
+      if (pre.querySelector('.code-copy-btn')) return
 
-        btn.addEventListener('click', async () => {
-          const code = pre.querySelector('code')
-          if (code) {
-            try {
-              await navigator.clipboard.writeText(code.textContent)
-              btn.textContent = '已复制'
-              setTimeout(() => { btn.textContent = '复制' }, 2000)
-            } catch {}
-          }
-        })
+      const btn = document.createElement('button')
+      btn.className = 'code-copy-btn absolute top-2 right-2 p-1.5 rounded bg-gray-700 hover:bg-gray-600 text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity text-xs'
+      btn.textContent = '复制'
+      pre.style.position = 'relative'
+      pre.classList.add('group')
+      pre.appendChild(btn)
+      addedButtons.add(btn)
+
+      const clickHandler = async () => {
+        const code = pre.querySelector('code')
+        if (code) {
+          try {
+            await navigator.clipboard.writeText(code.textContent)
+            btn.textContent = '已复制'
+            setTimeout(() => { btn.textContent = '复制' }, 2000)
+          } catch {}
+        }
       }
+      btn.addEventListener('click', clickHandler)
+      clickHandlers.set(btn, clickHandler)
     }
 
-    document.addEventListener('mouseover', handler, { passive: true })
-    return () => document.removeEventListener('mouseover', handler)
+    const mouseoverHandler = (e) => {
+      const pre = e.target.closest('pre')
+      if (pre) addCopyButton(pre)
+    }
+
+    document.addEventListener('mouseover', mouseoverHandler, { passive: true })
+
+    return () => {
+      document.removeEventListener('mouseover', mouseoverHandler)
+      addedButtons.forEach((btn) => {
+        const handler = clickHandlers.get(btn)
+        if (handler) btn.removeEventListener('click', handler)
+        btn.remove()
+      })
+    }
   }, [])
 
   return null

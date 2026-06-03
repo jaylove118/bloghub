@@ -55,7 +55,7 @@ export default function Layout() {
           <div className="flex items-center gap-4">
             <button
               onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="lg:hidden p-2 hover:bg-gray-100 rounded-lg"
+              className="lg:hidden p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg"
             >
               <MenuIcon size={24} />
             </button>
@@ -91,7 +91,7 @@ export default function Layout() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="搜索文章..."
-                className="pl-10 pr-4 py-2 w-64 border border-gray-200 rounded-full focus:outline-none focus:border-primary transition"
+                className="pl-10 pr-4 py-2 w-64 border border-gray-200 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-full focus:outline-none focus:border-primary transition"
               />
             </div>
           </form>
@@ -115,29 +115,29 @@ export default function Layout() {
                       className="w-full h-full object-cover"
                     />
                   </button>
-                  <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-100 opacity-0 invisible group-hover:opacity-100 group-hover:visible group-focus-within:opacity-100 group-focus-within:visible transition-all duration-200">
-                    <div className="p-3 border-b border-gray-100">
+                  <div className="absolute right-0 top-full mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-100 dark:border-gray-700 opacity-0 invisible group-hover:opacity-100 group-hover:visible group-focus-within:opacity-100 group-focus-within:visible transition-all duration-200">
+                    <div className="p-3 border-b border-gray-100 dark:border-gray-700">
                       <p className="font-medium">{user?.username}</p>
-                      <p className="text-sm text-gray-500">{user?.email}</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">{user?.email}</p>
                     </div>
                     <div className="p-2">
                       <Link
                         to={`/profile/${user?.id}`}
-                        className="flex items-center gap-2 px-3 py-2 hover:bg-gray-50 rounded-lg transition"
+                        className="flex items-center gap-2 px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition"
                       >
                         <User size={16} />
                         个人资料
                       </Link>
                       <Link
                         to="/settings"
-                        className="flex items-center gap-2 px-3 py-2 hover:bg-gray-50 rounded-lg transition"
+                        className="flex items-center gap-2 px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition"
                       >
                         <Settings size={16} />
                         设置
                       </Link>
                       <button
                         onClick={handleLogout}
-                        className="w-full flex items-center gap-2 px-3 py-2 hover:bg-gray-50 rounded-lg transition text-error"
+                        className="w-full flex items-center gap-2 px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition text-error"
                       >
                         <LogOut size={16} />
                         退出登录
@@ -150,7 +150,7 @@ export default function Layout() {
               <>
                 <Link
                   to="/login"
-                  className="px-4 py-2 text-gray-600 hover:text-primary transition"
+                  className="px-4 py-2 text-gray-600 dark:text-gray-400 hover:text-primary transition"
                 >
                   登录
                 </Link>
@@ -168,17 +168,17 @@ export default function Layout() {
 
       <div className="flex pt-16">
         <aside className={`
-          fixed lg:static inset-y-16 left-0 w-64 bg-white border-r border-gray-200 z-40
+          fixed lg:static inset-y-16 left-0 w-64 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 z-40
           transform transition-transform duration-300 ease-in-out
           ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
         `}>
           <div className="p-4">
             <div className="mb-6">
-              <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">分类</h3>
+              <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-3">分类</h3>
               <div className="space-y-1">
                 <Link
                   to="/blogs"
-                  className="flex items-center gap-3 px-3 py-2 hover:bg-gray-50 rounded-lg transition"
+                  className="flex items-center gap-3 px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition"
                 >
                   <span>📚</span>
                   <span>全部文章</span>
@@ -187,7 +187,7 @@ export default function Layout() {
                   <Link
                     key={slug}
                     to={`/blogs?category=${slug}`}
-                    className="flex items-center gap-3 px-3 py-2 hover:bg-gray-50 rounded-lg transition"
+                    className="flex items-center gap-3 px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition"
                   >
                     <span>{cat.icon}</span>
                     <span>{cat.name}</span>
@@ -197,7 +197,7 @@ export default function Layout() {
             </div>
 
             <div className="mb-6">
-              <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">热门标签</h3>
+              <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-3">热门标签</h3>
               <div className="flex flex-wrap gap-2">
                 {(popularTags.length ? popularTags : [{ tag: 'React', count: 1 }, { tag: 'JavaScript', count: 1 }, { tag: 'CSS', count: 1 }, { tag: 'Node.js', count: 1 }, { tag: 'Python', count: 1 }]).map(({ tag }) => (
                   <button
@@ -215,7 +215,7 @@ export default function Layout() {
 
             <div className="p-4 bg-gradient-to-br from-primary/10 to-secondary/10 rounded-xl">
               <h3 className="font-semibold mb-2">开始写作</h3>
-              <p className="text-sm text-gray-600 mb-3">分享你的想法和经验</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">分享你的想法和经验</p>
               <Link
                 to="/editor"
                 className="block text-center px-4 py-2 bg-primary text-white rounded-lg hover:bg-secondary transition"

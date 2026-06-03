@@ -80,7 +80,7 @@ export default function NotificationBell() {
               notifications.map(n => (
                 <div
                   key={n.id}
-                  className={`px-4 py-3 border-b border-gray-50 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-750 transition flex items-start gap-3 ${
+                  className={`px-4 py-3 border-b border-gray-50 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-700 transition flex items-start gap-3 ${
                     !n.is_read ? 'bg-blue-50/50 dark:bg-blue-900/10' : ''
                   }`}
                 >

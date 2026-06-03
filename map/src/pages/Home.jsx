@@ -60,7 +60,7 @@ export default function Home() {
             </div>
             <Link
               to="/editor"
-              className="px-6 py-3 bg-white text-primary font-semibold rounded-full hover:bg-gray-100 transition"
+              className="px-6 py-3 bg-white dark:bg-gray-800 text-primary font-semibold rounded-full hover:bg-gray-100 transition"
             >
               写文章
             </Link>
@@ -75,13 +75,13 @@ export default function Home() {
           <div className="flex justify-center gap-4">
             <Link
               to="/register"
-              className="px-6 py-3 bg-white text-primary font-semibold rounded-full hover:bg-gray-100 transition"
+              className="px-6 py-3 bg-white dark:bg-gray-800 text-primary font-semibold rounded-full hover:bg-gray-100 transition"
             >
               立即注册
             </Link>
             <Link
               to="/blogs"
-              className="px-6 py-3 border-2 border-white text-white font-semibold rounded-full hover:bg-white/10 transition"
+              className="px-6 py-3 border-2 border-white text-white font-semibold rounded-full hover:bg-white dark:bg-gray-800/10 transition"
             >
               浏览文章
             </Link>
@@ -97,7 +97,7 @@ export default function Home() {
           </div>
           <Link
             to={`/blog/${featuredPost.id}`}
-            className="block group bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300"
+            className="block group bg-white dark:bg-gray-800 rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300"
           >
             <div className="md:flex">
               <div className="md:w-2/3">
@@ -115,15 +115,15 @@ export default function Home() {
               </div>
               <div className="md:w-1/3 p-6 flex flex-col justify-center">
                 <div className="flex items-center gap-2 mb-3">
-                  <span className={`px-3 py-1 rounded-full text-sm ${categoryMap[featuredPost.category]?.color || 'bg-gray-100 text-gray-700'}`}>
+                  <span className={`px-3 py-1 rounded-full text-sm ${categoryMap[featuredPost.category]?.color || 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'}`}>
                     {categoryMap[featuredPost.category]?.icon} {categoryMap[featuredPost.category]?.name}
                   </span>
                   {featuredPost.isPinned && (
-                    <span className="px-2 py-1 rounded-full text-xs bg-amber-100 text-amber-700 flex items-center gap-0.5">
+                    <span className="px-2 py-1 rounded-full text-xs bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300 flex items-center gap-0.5">
                       <Pin size={12} /> 置顶
                     </span>
                   )}
-                  <span className="text-sm text-gray-500 flex items-center gap-1">
+                  <span className="text-sm text-gray-500 dark:text-gray-400 flex items-center gap-1">
                     <Eye size={14} />
                     {featuredPost.viewCount || 0}
                   </span>
@@ -131,10 +131,10 @@ export default function Home() {
                 <h3 className="text-2xl font-bold mb-3 group-hover:text-primary transition">
                   {featuredPost.title}
                 </h3>
-                <p className="text-gray-600 mb-4 line-clamp-3">
+                <p className="text-gray-600 dark:text-gray-400 mb-4 line-clamp-3">
                   {featuredPost.excerpt || featuredPost.content.replace(/[#*`]/g, '').slice(0, 150)}
                 </p>
-                <div className="flex items-center justify-between text-sm text-gray-500">
+                <div className="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400">
                   <span className="flex items-center gap-1">
                     <Clock size={14} />
                     {formatDate(featuredPost.createdAt)}
@@ -162,8 +162,8 @@ export default function Home() {
         </div>
 
         {posts.length === 0 ? (
-          <div className="text-center py-16 bg-white rounded-2xl">
-            <p className="text-gray-500 mb-4">还没有文章</p>
+          <div className="text-center py-16 bg-white dark:bg-gray-800 rounded-2xl">
+            <p className="text-gray-500 dark:text-gray-400 mb-4">还没有文章</p>
             <Link
               to="/editor"
               className="inline-block px-6 py-3 bg-primary text-white rounded-full hover:bg-secondary transition"
@@ -177,7 +177,7 @@ export default function Home() {
               <Link
                 key={post.id}
                 to={`/blog/${post.id}`}
-                className="group bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300"
+                className="group bg-white dark:bg-gray-800 rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300"
               >
                 <div className="aspect-video overflow-hidden">
                   {post.coverImage ? (
@@ -192,16 +192,16 @@ export default function Home() {
                 </div>
                 <div className="p-4">
                   <div className="flex items-center gap-2 mb-2">
-                    <span className={`px-2 py-0.5 rounded text-xs ${categoryMap[post.category]?.color || 'bg-gray-100 text-gray-700'}`}>
+                    <span className={`px-2 py-0.5 rounded text-xs ${categoryMap[post.category]?.color || 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'}`}>
                       {categoryMap[post.category]?.name}
                     </span>
                     {post.isPinned && (
-                      <span className="px-1.5 py-0.5 rounded text-xs bg-amber-100 text-amber-700 flex items-center gap-0.5">
+                      <span className="px-1.5 py-0.5 rounded text-xs bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300 flex items-center gap-0.5">
                         <Pin size={10} /> 置顶
                       </span>
                     )}
                     {post.tags?.slice(0, 2).map((tag) => (
-                      <span key={tag} className="px-2 py-0.5 bg-gray-100 rounded text-xs text-gray-600">
+                      <span key={tag} className="px-2 py-0.5 bg-gray-100 rounded text-xs text-gray-600 dark:text-gray-400">
                         #{tag}
                       </span>
                     ))}
@@ -209,10 +209,10 @@ export default function Home() {
                   <h3 className="font-bold mb-2 group-hover:text-primary transition line-clamp-2">
                     {post.title}
                   </h3>
-                  <p className="text-sm text-gray-600 line-clamp-2 mb-3">
+                  <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2 mb-3">
                     {post.excerpt || post.content.replace(/[#*`]/g, '').slice(0, 100)}
                   </p>
-                  <div className="flex items-center justify-between text-xs text-gray-500">
+                  <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
                     <span className="flex items-center gap-1">
                       <Clock size={12} />
                       {formatDate(post.createdAt)}
@@ -236,20 +236,20 @@ export default function Home() {
       </section>
 
       <section className="grid md:grid-cols-3 gap-6">
-        <div className="p-6 bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl">
+        <div className="p-6 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/30 dark:to-blue-800/20 rounded-xl">
           <div className="text-3xl mb-3">✍️</div>
           <h3 className="font-bold mb-2">创作自由</h3>
-          <p className="text-sm text-gray-600">支持 Markdown，随时随地记录灵感</p>
+          <p className="text-sm text-gray-600 dark:text-gray-400">支持 Markdown，随时随地记录灵感</p>
         </div>
-        <div className="p-6 bg-gradient-to-br from-green-50 to-green-100 rounded-xl">
+        <div className="p-6 bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/30 dark:to-green-800/20 rounded-xl">
           <div className="text-3xl mb-3">👥</div>
           <h3 className="font-bold mb-2">社区互动</h3>
-          <p className="text-sm text-gray-600">点赞、评论、收藏，与读者互动</p>
+          <p className="text-sm text-gray-600 dark:text-gray-400">点赞、评论、收藏，与读者互动</p>
         </div>
-        <div className="p-6 bg-gradient-to-br from-amber-50 to-amber-100 rounded-xl">
+        <div className="p-6 bg-gradient-to-br from-amber-50 to-amber-100 dark:from-amber-900/30 dark:to-amber-800/20 rounded-xl">
           <div className="text-3xl mb-3">🎨</div>
           <h3 className="font-bold mb-2">精美主题</h3>
-          <p className="text-sm text-gray-600">响应式设计，适配所有设备</p>
+          <p className="text-sm text-gray-600 dark:text-gray-400">响应式设计，适配所有设备</p>
         </div>
       </section>
     </div>

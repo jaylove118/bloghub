@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll } from 'vitest'
+import { describe, it, expect, beforeAll, afterAll } from 'vitest'
 import express from 'express'
 import request from 'supertest'
 import cookieParser from 'cookie-parser'
@@ -227,6 +227,27 @@ describe('Users', () => {
     const res = await request(app).get('/api/users/99999')
     expect(res.status).toBe(404)
   })
+})
+
+afterAll(async () => {
+  const pool = (await import('../config/db.js')).default
+  try {
+    const [users] = await pool.query('SELECT id FROM users WHERE username LIKE ?', ['testuser_%'])
+    const userIds = users.map(u => u.id)
+    if (userIds.length > 0) {
+      await pool.query('DELETE FROM notifications WHERE user_id IN (?) OR actor_id IN (?)', [userIds, userIds])
+      await pool.query('DELETE FROM post_revisions WHERE revised_by IN (?)', [userIds])
+      await pool.query('DELETE FROM analytics_views WHERE user_id IN (?)', [userIds])
+      const [posts] = await pool.query('SELECT id FROM posts WHERE author_id IN (?)', [userIds])
+      const postIds = posts.map(p => p.id)
+      if (postIds.length > 0) {
+        await pool.query('DELETE FROM comments WHERE post_id IN (?)', [postIds])
+        await pool.query('DELETE FROM post_revisions WHERE post_id IN (?)', [postIds])
+      }
+      await pool.query('DELETE FROM posts WHERE author_id IN (?)', [userIds])
+      await pool.query('DELETE FROM users WHERE id IN (?)', [userIds])
+    }
+  } catch {}
 })
 
 describe('Security', () => {

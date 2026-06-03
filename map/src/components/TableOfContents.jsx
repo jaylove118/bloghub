@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 
-export default function TableOfContents({ content }) {
+export default function useTableOfContents(content) {
   const [activeId, setActiveId] = useState('')
 
   const headings = useMemo(() => {

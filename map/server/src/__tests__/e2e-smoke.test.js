@@ -117,4 +117,27 @@ describe('E2E Smoke Tests', () => {
         .set('Authorization', 'Bearer ' + token)
     }
   })
+
+  // Clean up test data
+  afterAll(async () => {
+    const pool = (await import('../config/db.js')).default
+    try {
+      const [users] = await pool.query('SELECT id FROM users WHERE username LIKE ?', ['e2e_%'])
+      const userIds = users.map(u => u.id)
+      if (userIds.length > 0) {
+        await pool.query('DELETE FROM notifications WHERE user_id IN (?) OR actor_id IN (?)', [userIds, userIds])
+        await pool.query('DELETE FROM post_revisions WHERE revised_by IN (?)', [userIds])
+        await pool.query('DELETE FROM analytics_views')
+        const [posts] = await pool.query('SELECT id FROM posts WHERE author_id IN (?)', [userIds])
+        const postIds = posts.map(p => p.id)
+        if (postIds.length > 0) {
+          await pool.query('DELETE FROM comments WHERE post_id IN (?)', [postIds])
+          await pool.query('DELETE FROM post_revisions WHERE post_id IN (?)', [postIds])
+        }
+        await pool.query('DELETE FROM posts WHERE author_id IN (?)', [userIds])
+        await pool.query('DELETE FROM subscribers WHERE email LIKE ?', ['%@test.com'])
+        await pool.query('DELETE FROM users WHERE id IN (?)', [userIds])
+      }
+    } catch {}
+  })
 })

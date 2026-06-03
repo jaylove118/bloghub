@@ -123,7 +123,7 @@ export default function BlogList() {
         <button
           onClick={() => handleCategory('')}
           className={`px-4 py-2 rounded-full text-sm transition ${
-            !category ? 'bg-primary text-white' : 'bg-gray-100 hover:bg-gray-200'
+            !category ? 'bg-primary text-white' : 'bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600'
           }`}
         >
           全部
@@ -133,7 +133,7 @@ export default function BlogList() {
             key={slug}
             onClick={() => handleCategory(slug)}
             className={`px-4 py-2 rounded-full text-sm transition ${
-              category === slug ? 'bg-primary text-white' : 'bg-gray-100 hover:bg-gray-200'
+              category === slug ? 'bg-primary text-white' : 'bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600'
             }`}
           >
             {cat.icon} {cat.name}
@@ -143,7 +143,7 @@ export default function BlogList() {
 
       {tags.length > 0 && (
         <div className="mb-4 flex flex-wrap items-center gap-2">
-          <span className="text-gray-500">标签:</span>
+          <span className="text-gray-500 dark:text-gray-400">标签:</span>
           {tags.map(t => (
             <span key={t} className="px-3 py-1 bg-primary/10 text-primary rounded-full text-sm flex items-center gap-1">
               #{t}
@@ -158,7 +158,7 @@ export default function BlogList() {
       {hasFilters && (
         <button
           onClick={clearFilters}
-          className="mb-6 text-sm text-gray-500 hover:text-primary flex items-center gap-1"
+          className="mb-6 text-sm text-gray-500 dark:text-gray-400 hover:text-primary flex items-center gap-1"
         >
           <X size={14} />
           清除筛选
@@ -166,15 +166,15 @@ export default function BlogList() {
       )}
 
       {error ? (
-        <div className="text-center py-16 bg-white dark:bg-gray-800 rounded-2xl">
+        <div className="text-center py-16 bg-white dark:bg-gray-800 dark:bg-gray-800 rounded-2xl">
           <p className="text-red-500 mb-4">{error}</p>
           <button onClick={() => window.location.reload()} className="text-primary hover:underline">重试</button>
         </div>
       ) : loading ? (
         <LoadingSpinner className="h-64" />
       ) : posts.length === 0 ? (
-        <div className="text-center py-16 bg-white dark:bg-gray-800 rounded-2xl">
-          <p className="text-gray-500 mb-4">没有找到相关文章</p>
+        <div className="text-center py-16 bg-white dark:bg-gray-800 dark:bg-gray-800 rounded-2xl">
+          <p className="text-gray-500 dark:text-gray-400 mb-4">没有找到相关文章</p>
           {hasFilters && (
             <button
               onClick={clearFilters}
@@ -192,7 +192,7 @@ export default function BlogList() {
               <Link
                 key={post.id}
                 to={`/blog/${post.id}`}
-                className="group bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300"
+                className="group bg-white dark:bg-gray-800 rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300"
               >
                 <div className="aspect-video overflow-hidden">
                   {post.coverImage ? (
@@ -211,12 +211,12 @@ export default function BlogList() {
                       {categoryMap[post.category]?.name}
                     </span>
                     {post.isPinned && (
-                      <span className="px-1.5 py-0.5 rounded text-xs bg-amber-100 text-amber-700 flex items-center gap-0.5">
+                      <span className="px-1.5 py-0.5 rounded text-xs bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300 flex items-center gap-0.5">
                         <Pin size={10} /> 置顶
                       </span>
                     )}
                     {post.tags?.slice(0, 2).map((t) => (
-                      <button key={t} onClick={(e) => { e.preventDefault(); handleTagToggle(t) }} className="px-2 py-0.5 bg-gray-100 rounded text-xs text-gray-600 hover:bg-primary/20 hover:text-primary transition">
+                      <button key={t} onClick={(e) => { e.preventDefault(); handleTagToggle(t) }} className="px-2 py-0.5 bg-gray-100 dark:bg-gray-700 rounded text-xs text-gray-600 dark:text-gray-300 hover:bg-primary/20 hover:text-primary transition">
                         #{t}
                       </button>
                     ))}
@@ -224,10 +224,10 @@ export default function BlogList() {
                   <h3 className="font-bold mb-2 group-hover:text-primary transition line-clamp-2">
                     {post.title}
                   </h3>
-                  <p className="text-sm text-gray-600 line-clamp-2 mb-3">
+                  <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2 mb-3">
                     {post.excerpt || post.content.replace(/[#*`]/g, '').slice(0, 100)}
                   </p>
-                  <div className="flex items-center justify-between text-xs text-gray-500">
+                  <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
                     <span className="flex items-center gap-1">
                       <Clock size={12} />
                       {formatDate(post.createdAt)}
@@ -257,17 +257,17 @@ export default function BlogList() {
               <button
                 onClick={() => setPage(p => Math.max(1, p - 1))}
                 disabled={page <= 1}
-                className="px-4 py-2 bg-white rounded-full border border-gray-200 hover:bg-gray-50 transition disabled:opacity-30"
+                className="px-4 py-2 bg-white dark:bg-gray-800 rounded-full border border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 transition disabled:opacity-30"
               >
                 <ChevronLeft size={18} />
               </button>
-              <span className="text-sm text-gray-600">
+              <span className="text-sm text-gray-600 dark:text-gray-400">
                 第 {page} / {Math.ceil(pagination.total / pagination.limit)} 页
               </span>
               <button
                 onClick={() => setPage(p => p + 1)}
                 disabled={page >= Math.ceil(pagination.total / pagination.limit)}
-                className="px-4 py-2 bg-white rounded-full border border-gray-200 hover:bg-gray-50 transition disabled:opacity-30"
+                className="px-4 py-2 bg-white dark:bg-gray-800 rounded-full border border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 transition disabled:opacity-30"
               >
                 <ChevronRight size={18} />
               </button>

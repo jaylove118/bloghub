@@ -34,6 +34,10 @@ async function request(path, options = {}) {
   return data
 }
 
+function safeParseJSON(str, fallback = []) {
+  if (typeof str !== 'string') return str || fallback
+  try { return JSON.parse(str) } catch { return fallback }
+}
 function normalizeUser(u) {
   return {
     id: u.id,
@@ -55,7 +59,7 @@ function normalizePost(p) {
     excerpt: p.excerpt,
     category: p.category,
     coverImage: p.cover_image,
-    tags: typeof p.tags === 'string' ? JSON.parse(p.tags) : (p.tags || []),
+    tags: safeParseJSON(p.tags),
     authorId: p.author_id,
     authorName: p.author_name,
     authorAvatar: p.author_avatar,
@@ -64,8 +68,8 @@ function normalizePost(p) {
     isPinned: Boolean(p.is_pinned),
     status: p.status || 'published',
     scheduledAt: p.scheduled_at || null,
-    likes: typeof p.likes === 'string' ? JSON.parse(p.likes) : (p.likes || []),
-    favorites: typeof p.favorites === 'string' ? JSON.parse(p.favorites) : (p.favorites || []),
+    likes: safeParseJSON(p.likes),
+    favorites: safeParseJSON(p.favorites),
     createdAt: p.created_at,
     updatedAt: p.updated_at,
   }
@@ -80,7 +84,7 @@ function normalizeComment(c) {
     parentId: c.parent_id,
     username: c.username,
     avatar: c.avatar,
-    likes: typeof c.likes === 'string' ? JSON.parse(c.likes) : (c.likes || []),
+    likes: safeParseJSON(c.likes),
     createdAt: c.created_at,
   }
 }
