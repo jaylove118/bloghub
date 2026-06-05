@@ -20,6 +20,10 @@ import swaggerDoc from './config/swagger.js'
 
 dotenv.config({ path: new URL('../.env', import.meta.url) })
 
+console.log('JWT_SECRET set:', !!process.env.JWT_SECRET)
+console.log('DB_HOST:', process.env.DB_HOST)
+console.log('PORT env:', process.env.PORT)
+
 if (!process.env.JWT_SECRET) {
   console.error('FATAL: JWT_SECRET environment variable is not set')
   process.exit(1)
