@@ -1,13 +1,11 @@
 import { useState, useEffect } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
-import { useAuth } from '../context/AuthContext'
-import { User, Mail, Lock, Eye, EyeOff, ArrowRight } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import { User, Mail, Lock, Eye, EyeOff, ArrowRight, CheckCircle } from 'lucide-react'
 import { avatarTypes } from '../utils/constants'
+import { api } from '../context/api'
 
 export default function Register() {
   useEffect(() => { document.title = '注册 - BlogHub' }, [])
-  const { register } = useAuth()
-  const navigate = useNavigate()
   const [formData, setFormData] = useState({
     username: '',
     email: '',
@@ -18,6 +16,7 @@ export default function Register() {
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [registered, setRegistered] = useState(false)
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -36,19 +35,36 @@ export default function Register() {
     setLoading(true)
     try {
       const avatarUrl = `https://api.dicebear.com/7.x/${formData.avatar || 'avataaars'}/svg?seed=${formData.username}`
-      await register({
+      const res = await api.auth.register({
         username: formData.username,
         email: formData.email,
         password: formData.password,
         avatar: avatarUrl,
         bio: '',
       })
-      navigate('/')
+      if (res.message) {
+        setRegistered(true)
+      }
     } catch (err) {
       setError(err.message)
     } finally {
       setLoading(false)
     }
+  }
+
+  if (registered) {
+    return (
+      <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center px-4 py-8">
+        <div className="w-full max-w-md text-center">
+          <CheckCircle size={64} className="mx-auto text-green-500 mb-4" />
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">注册成功！</h2>
+          <p className="text-gray-600 dark:text-gray-400 mb-6">
+            验证邮件已发送至 <strong>{formData.email}</strong>，请点击邮件中的链接完成验证后再登录。
+          </p>
+          <Link to="/login" className="text-primary font-medium hover:underline">前往登录</Link>
+        </div>
+      </div>
+    )
   }
 
   return (

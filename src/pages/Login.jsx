@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { Mail, Lock, Eye, EyeOff, ArrowRight } from 'lucide-react'
 
@@ -7,9 +7,11 @@ export default function Login() {
   useEffect(() => { document.title = '登录 - BlogHub' }, [])
   const { login } = useAuth()
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const [formData, setFormData] = useState({ email: '', password: '' })
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
+  const [success, setSuccess] = useState(searchParams.get('verified') === 'true' ? '邮箱验证成功！请登录' : '')
   const [loading, setLoading] = useState(false)
 
   const handleSubmit = async (e) => {
@@ -35,6 +37,11 @@ export default function Login() {
         </div>
 
         <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-8">
+          {success && (
+            <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg text-green-700 text-sm">
+              {success}
+            </div>
+          )}
           {error && (
             <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-error text-sm">
               {error}

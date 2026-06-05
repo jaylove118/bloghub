@@ -33,17 +33,15 @@ router.post('/register', registerValidation, async (req, res, next) => {
     )
 
     const userId = result.insertId
-    const token = jwt.sign({ userId }, process.env.JWT_SECRET, { expiresIn: '7d' })
 
-    // Send verification email (non-blocking)
-    sendVerificationEmail(email, verifyToken).catch(() => {})
+    // Send verification email
+    const sent = await sendVerificationEmail(email, verifyToken)
+    if (!sent) {
+      await pool.query('DELETE FROM users WHERE id = ?', [userId])
+      throw new AppError(500, '验证邮件发送失败，请稍后重试')
+    }
 
-    const [users] = await pool.query(
-      'SELECT id, username, email, avatar, bio, github, email_verified, created_at FROM users WHERE id = ?',
-      [userId]
-    )
-
-    res.status(201).json({ user: users[0], token })
+    res.status(201).json({ message: '验证邮件已发送，请检查邮箱完成验证' })
   } catch (err) {
     next(err)
   }
@@ -64,6 +62,9 @@ router.post('/login', loginValidation, async (req, res, next) => {
     }
 
     const user = users[0]
+    if (!user.email_verified) {
+      throw new AppError(403, '请先验证邮箱后再登录')
+    }
     const valid = await bcrypt.compare(password, user.password)
     if (!valid) {
       throw new AppError(401, '邮箱或密码错误')
@@ -328,12 +329,27 @@ router.get('/verify-email', async (req, res, next) => {
   try {
     const { token } = req.query
     if (!token) return res.status(400).json({ message: '缺少验证token' })
-    const [result] = await pool.query(
-      'UPDATE users SET email_verified = 1, verify_token = NULL WHERE verify_token = ?',
-      [token]
+
+    // Find user by token first
+    const [users] = await pool.query('SELECT id FROM users WHERE verify_token = ?', [token])
+    if (users.length === 0) return res.status(404).json({ message: '无效的验证链接' })
+
+    const userId = users[0].id
+    await pool.query(
+      'UPDATE users SET email_verified = 1, verify_token = NULL WHERE id = ?',
+      [userId]
     )
-    if (result.affectedRows === 0) return res.status(404).json({ message: '无效的验证链接' })
-    res.json({ message: '邮箱验证成功' })
+
+    // Auto-login
+    const jwtToken = jwt.sign({ userId }, process.env.JWT_SECRET, { expiresIn: '7d' })
+    const siteUrl = process.env.SITE_URL || 'http://localhost:5173'
+    res.cookie('oauth_token', jwtToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 5 * 60 * 1000,
+    })
+    res.redirect(siteUrl + '/oauth-callback')
   } catch (err) {
     next(err)
   }
