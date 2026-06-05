@@ -178,6 +178,7 @@ if (process.env.NODE_ENV === 'production') {
 }
 
 app.use((err, _req, res, _next) => {
+  console.error(err)
   const status = err.status || 500
   const message = status === 500 ? '服务器内部错误' : err.message
   res.status(status).json({ message })
