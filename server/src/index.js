@@ -171,6 +171,12 @@ app.get('/api/admin/stats', authRequired, async (_req, res) => {
   } catch (err) { res.status(500).json({ message: '统计获取失败' }) }
 })
 
+if (process.env.NODE_ENV === 'production') {
+  const distPath = join(__dirname, '..', '..', 'dist')
+  app.use(express.static(distPath))
+  app.get('*', (_req, res) => { res.sendFile(join(distPath, 'index.html')) })
+}
+
 app.use((err, _req, res, _next) => {
   const status = err.status || 500
   const message = status === 500 ? '服务器内部错误' : err.message
