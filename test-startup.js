@@ -1,6 +1,0 @@
-console.log('=== STARTUP TEST ===')
-console.log('cwd:', process.cwd())
-console.log('node:', process.version)
-console.log('env vars:', Object.keys(process.env).filter(k => k.startsWith('DB') || k.startsWith('JWT') || k === 'PORT' || k === 'NODE_ENV').join(', '))
-console.log('=== TEST COMPLETE ===')
-process.exit(0)
