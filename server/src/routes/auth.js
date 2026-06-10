@@ -323,7 +323,7 @@ router.get('/github/callback', async (req, res, next) => {
     const token = jwt.sign({ userId }, process.env.JWT_SECRET, { expiresIn: '7d' })
     const siteUrl = process.env.SITE_URL || 'http://localhost:5173'
     res.cookie('oauth_token', token, {
-      httpOnly: true,
+      httpOnly: false,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
       maxAge: 5 * 60 * 1000,
@@ -381,7 +381,7 @@ router.get('/google/callback', async (req, res, next) => {
     const token = jwt.sign({ userId }, process.env.JWT_SECRET, { expiresIn: '7d' })
     const siteUrl = process.env.SITE_URL || 'http://localhost:5173'
     res.cookie('oauth_token', token, {
-      httpOnly: true,
+      httpOnly: false,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
       maxAge: 5 * 60 * 1000,
