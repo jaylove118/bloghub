@@ -63,13 +63,12 @@ export default function Editor() {
   formDataRef.current = formData
   const savedSelection = useRef([0, 0])
 
-  useEffect(() => {
+  const trackSelection = () => {
     const ta = textareaRef.current
-    if (!ta) return
-    const onBlur = () => { savedSelection.current = [ta.selectionStart, ta.selectionEnd] }
-    ta.addEventListener('blur', onBlur)
-    return () => ta.removeEventListener('blur', onBlur)
-  }, [])
+    if (ta && document.activeElement === ta) {
+      savedSelection.current = [ta.selectionStart, ta.selectionEnd]
+    }
+  }
 
   const insertMarkdown = (prefix, suffix = '') => {
     const ta = textareaRef.current
@@ -508,6 +507,8 @@ export default function Editor() {
                     ref={textareaRef}
                     value={formData.content}
                     onChange={(e) => handleChange({ content: e.target.value })}
+                    onMouseUp={trackSelection}
+                    onKeyUp={trackSelection}
                     placeholder="开始写作..."
                     maxLength={100000}
                     className={`${splitView ? 'w-full md:w-1/2 md:border-r border-b md:border-b-0 border-gray-200 dark:border-gray-600' : 'w-full'} h-96 p-4 focus:outline-none resize-none font-mono bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100`}
