@@ -19,7 +19,7 @@ import feedbackRoutes from './routes/feedback.js'
 import { authRequired, adminRequired } from './middleware/auth.js'
 import swaggerDoc from './config/swagger.js'
 
-dotenv.config({ path: new URL('../.env', import.meta.url) })
+dotenv.config({ path: new URL('../../.env', import.meta.url) })
 
 if (!process.env.JWT_SECRET) {
   console.error('FATAL: JWT_SECRET environment variable is not set')
