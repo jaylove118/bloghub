@@ -1,5 +1,22 @@
 import nodemailer from 'nodemailer'
 
+const EMAIL_HEADER = `
+<tr><td style="background:linear-gradient(135deg,#3b82f6,#2563eb);padding:28px 40px;text-align:center">
+  <table cellpadding="0" cellspacing="0" align="center"><tr>
+    <td style="background:rgba(255,255,255,.15);width:40px;height:40px;border-radius:10px;text-align:center;vertical-align:middle">
+      <span style="color:#fff;font-size:22px;font-weight:700;line-height:40px">B</span>
+    </td>
+    <td style="width:12px"></td>
+    <td><h1 style="margin:0;color:#fff;font-size:22px;font-weight:700">BlogHub</h1></td>
+  </tr></table>
+  <p style="margin:10px 0 0;color:rgba(255,255,255,.8);font-size:14px">{{subtitle}}</p>
+</td></tr>`
+
+const EMAIL_FOOTER = `
+<tr><td style="border-top:1px solid #e5e7eb;padding:20px 40px;text-align:center">
+  <p style="margin:0;color:#9ca3af;font-size:12px">BlogHub — 分享你的想法</p>
+</td></tr>`
+
 function getTransporter() {
   if (!process.env.SMTP_HOST) return null
   return nodemailer.createTransport({
@@ -40,10 +57,7 @@ export function sendVerificationCode(email, code) {
 <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f6f9;padding:40px 0">
   <tr><td align="center">
     <table width="480" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.06)">
-      <tr><td style="background:linear-gradient(135deg,#3b82f6,#6366f1);padding:32px 40px;text-align:center">
-        <h1 style="margin:0;color:#fff;font-size:24px;font-weight:700">BlogHub</h1>
-        <p style="margin:8px 0 0;color:rgba(255,255,255,.85);font-size:14px">邮箱验证码</p>
-      </td></tr>
+      ${EMAIL_HEADER.replace('{{subtitle}}', '邮箱验证码')}
       <tr><td style="padding:40px">
         <p style="margin:0 0 8px;color:#4b5563;font-size:15px">你好，</p>
         <p style="margin:0 0 24px;color:#6b7280;font-size:14px;line-height:1.6">你正在注册 BlogHub 账户，请使用以下验证码完成邮箱验证：</p>
@@ -57,9 +71,7 @@ export function sendVerificationCode(email, code) {
           如果这不是你的操作，请忽略此邮件。
         </p>
       </td></tr>
-      <tr><td style="border-top:1px solid #e5e7eb;padding:20px 40px;text-align:center">
-        <p style="margin:0;color:#9ca3af;font-size:12px">BlogHub — 分享你的想法</p>
-      </td></tr>
+      ${EMAIL_FOOTER}
     </table>
   </td></tr>
 </table>
@@ -72,7 +84,29 @@ export function sendVerificationEmail(email, token) {
   return sendEmail({
     to: email,
     subject: '验证你的 BlogHub 邮箱',
-    html: `<p>感谢注册 BlogHub！</p><p>请点击以下链接验证邮箱：</p><p><a href="${siteUrl}/api/auth/verify-email?token=${token}">${siteUrl}/api/auth/verify-email?token=${token}</a></p>`,
+    html: `<!DOCTYPE html>
+<html lang="zh-CN">
+<head><meta charset="utf-8"></head>
+<body style="margin:0;padding:0;background:#f4f6f9;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f6f9;padding:40px 0">
+  <tr><td align="center">
+    <table width="480" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.06)">
+      ${EMAIL_HEADER.replace('{{subtitle}}', '邮箱验证')}
+      <tr><td style="padding:40px">
+        <p style="margin:0 0 8px;color:#4b5563;font-size:15px">感谢注册 BlogHub！</p>
+        <p style="margin:0 0 24px;color:#6b7280;font-size:14px;line-height:1.6">点击下方按钮验证你的邮箱地址：</p>
+        <table width="100%" cellpadding="0" cellspacing="0">
+          <tr><td align="center">
+            <a href="${siteUrl}/api/auth/verify-email?token=${token}" style="display:inline-block;background:#3b82f6;color:#fff;text-decoration:none;padding:14px 40px;border-radius:9999px;font-size:15px;font-weight:600">验证邮箱</a>
+          </td></tr>
+        </table>
+        <p style="margin:24px 0 0;color:#9ca3af;font-size:12px;line-height:1.6">如果按钮无法点击，请复制以下链接：<br>${siteUrl}/api/auth/verify-email?token=${token}</p>
+      </td></tr>
+      ${EMAIL_FOOTER}
+    </table>
+  </td></tr>
+</table>
+</body></html>`,
   })
 }
 
@@ -81,7 +115,29 @@ export function sendPasswordResetEmail(email, token) {
   return sendEmail({
     to: email,
     subject: '重置你的 BlogHub 密码',
-    html: `<p>你请求了密码重置。</p><p>请点击以下链接设置新密码：</p><p><a href="${siteUrl}/reset-password?token=${token}">${siteUrl}/reset-password?token=${token}</a></p><p>此链接1小时内有效。</p>`,
+    html: `<!DOCTYPE html>
+<html lang="zh-CN">
+<head><meta charset="utf-8"></head>
+<body style="margin:0;padding:0;background:#f4f6f9;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f6f9;padding:40px 0">
+  <tr><td align="center">
+    <table width="480" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.06)">
+      ${EMAIL_HEADER.replace('{{subtitle}}', '密码重置')}
+      <tr><td style="padding:40px">
+        <p style="margin:0 0 8px;color:#4b5563;font-size:15px">你好，</p>
+        <p style="margin:0 0 24px;color:#6b7280;font-size:14px;line-height:1.6">你请求了密码重置。点击下方按钮设置新密码：</p>
+        <table width="100%" cellpadding="0" cellspacing="0">
+          <tr><td align="center">
+            <a href="${siteUrl}/reset-password?token=${token}" style="display:inline-block;background:#3b82f6;color:#fff;text-decoration:none;padding:14px 40px;border-radius:9999px;font-size:15px;font-weight:600">重置密码</a>
+          </td></tr>
+        </table>
+        <p style="margin:24px 0 0;color:#9ca3af;font-size:12px;line-height:1.6">此链接 <strong>1 小时内</strong>有效。<br>如果这不是你的操作，请忽略此邮件。</p>
+      </td></tr>
+      ${EMAIL_FOOTER}
+    </table>
+  </td></tr>
+</table>
+</body></html>`,
   })
 }
 
@@ -97,10 +153,7 @@ export function sendSubscribeConfirmation(email) {
 <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f6f9;padding:40px 0">
   <tr><td align="center">
     <table width="480" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.06)">
-      <tr><td style="background:linear-gradient(135deg,#3b82f6,#6366f1);padding:32px 40px;text-align:center">
-        <h1 style="margin:0;color:#fff;font-size:24px;font-weight:700">BlogHub</h1>
-        <p style="margin:8px 0 0;color:rgba(255,255,255,.85);font-size:14px">订阅成功</p>
-      </td></tr>
+      ${EMAIL_HEADER.replace('{{subtitle}}', '订阅成功')}
       <tr><td style="padding:40px">
         <p style="margin:0 0 8px;color:#4b5563;font-size:15px">你好，</p>
         <p style="margin:0 0 24px;color:#6b7280;font-size:14px;line-height:1.6">你已成功订阅 BlogHub 博客更新。每当有新文章发布时，我们会第一时间通知你。</p>
@@ -134,10 +187,7 @@ export function sendNewPostNotification(email, postTitle, postExcerpt, postSlug,
 <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f6f9;padding:40px 0">
   <tr><td align="center">
     <table width="480" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.06)">
-      <tr><td style="background:linear-gradient(135deg,#3b82f6,#6366f1);padding:32px 40px;text-align:center">
-        <h1 style="margin:0;color:#fff;font-size:24px;font-weight:700">BlogHub</h1>
-        <p style="margin:8px 0 0;color:rgba(255,255,255,.85);font-size:14px">新文章通知</p>
-      </td></tr>
+      ${EMAIL_HEADER.replace('{{subtitle}}', '新文章通知')}
       <tr><td style="padding:40px">
         <p style="margin:0 0 8px;color:#4b5563;font-size:15px">你好，</p>
         <p style="margin:0 0 24px;color:#6b7280;font-size:14px;line-height:1.6">你订阅的 BlogHub 有新文章发布啦。</p>
@@ -170,6 +220,27 @@ export function sendCommentNotification(email, postTitle, commenterName) {
   return sendEmail({
     to: email,
     subject: `${commenterName} 评论了你的文章`,
-    html: `<p>${commenterName} 评论了你的文章《${postTitle}》。</p><p>登录 <a href="${siteUrl}">BlogHub</a> 查看详情。</p>`,
+    html: `<!DOCTYPE html>
+<html lang="zh-CN">
+<head><meta charset="utf-8"></head>
+<body style="margin:0;padding:0;background:#f4f6f9;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f6f9;padding:40px 0">
+  <tr><td align="center">
+    <table width="480" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.06)">
+      ${EMAIL_HEADER.replace('{{subtitle}}', '评论通知')}
+      <tr><td style="padding:40px">
+        <p style="margin:0 0 8px;color:#4b5563;font-size:15px">你好，</p>
+        <p style="margin:0 0 24px;color:#6b7280;font-size:14px;line-height:1.6">${commenterName} 评论了你的文章《${postTitle}》。登录 BlogHub 查看详情。</p>
+        <table width="100%" cellpadding="0" cellspacing="0">
+          <tr><td align="center">
+            <a href="${siteUrl}" style="display:inline-block;background:#3b82f6;color:#fff;text-decoration:none;padding:14px 40px;border-radius:9999px;font-size:15px;font-weight:600">查看详情</a>
+          </td></tr>
+        </table>
+      </td></tr>
+      ${EMAIL_FOOTER}
+    </table>
+  </td></tr>
+</table>
+</body></html>`,
   })
 }
