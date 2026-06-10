@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link, Navigate } from 'react-router-dom'
-import { Eye, Users, FileText, MessageCircle, TrendingUp, Mail, Trash2, Pin } from 'lucide-react'
+import { Eye, Users, FileText, MessageCircle, TrendingUp, Mail, Trash2, Pin, MessageSquare } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { useSEO } from '../hooks/useSEO'
 import LoadingSpinner from '../components/LoadingSpinner'
@@ -41,6 +41,7 @@ export default function Admin() {
   const [usersLoading, setUsersLoading] = useState(false)
   const [usersPage, setUsersPage] = useState(1)
   const [usersTotal, setUsersTotal] = useState(0)
+  const [feedbacks, setFeedbacks] = useState([])
 
   useEffect(() => {
     (async () => {
@@ -53,6 +54,10 @@ export default function Admin() {
         setStats(statsRes.status === 'fulfilled' ? statsRes.value : null)
         setSubscribers(subRes.status === 'fulfilled' ? (subRes.value.subscribers || []) : [])
         setAnalytics(anaRes.status === 'fulfilled' ? anaRes.value : { daily: [], topReferrers: [] })
+      } catch {}
+      try {
+        const fbRes = await api.request('/feedback')
+        setFeedbacks(fbRes.feedbacks || [])
       } catch {}
       setLoading(false)
     })()
@@ -214,6 +219,43 @@ export default function Admin() {
           <SimpleBarChart data={analytics.topReferrers} labelKey="referrer" valueKey="count" color="bg-green-500" />
         </div>
       )}
+
+      <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700 mb-6">
+        <div className="flex items-center gap-2 mb-4">
+          <MessageSquare size={18} className="text-primary" />
+          <h2 className="font-bold dark:text-gray-200">用户反馈 ({feedbacks.length})</h2>
+        </div>
+        {feedbacks.length === 0 ? (
+          <p className="text-gray-500 text-sm">暂无反馈</p>
+        ) : (
+          <div className="space-y-3">
+            {feedbacks.map(fb => (
+              <div key={fb.id} className="p-4 bg-gray-50 dark:bg-gray-750 rounded-xl border border-gray-100 dark:border-gray-700">
+                <div className="flex items-start justify-between mb-2">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className={`px-2 py-0.5 text-xs rounded-full ${
+                      fb.type === 'bug' ? 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300' :
+                      fb.type === 'praise' ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300' :
+                      fb.type === 'other' ? 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400' :
+                      'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300'
+                    }`}>
+                      {{ suggestion: '建议', bug: 'Bug', praise: '好评', other: '其他' }[fb.type] || fb.type}
+                    </span>
+                    <span className="text-sm font-medium dark:text-gray-200">
+                      {fb.user_name || fb.name || '匿名用户'}
+                    </span>
+                    {fb.email && <span className="text-xs text-gray-500">{fb.email}</span>}
+                  </div>
+                  <span className="text-xs text-gray-400 flex-shrink-0 ml-2">
+                    {new Date(fb.created_at).toLocaleDateString('zh-CN')}
+                  </span>
+                </div>
+                <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">{fb.content}</p>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
 
       <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700 mb-6">
         <div className="flex items-center gap-2 mb-4">
