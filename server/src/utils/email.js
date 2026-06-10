@@ -1,23 +1,29 @@
-const RESEND_API = 'https://api.resend.com/emails'
+import nodemailer from 'nodemailer'
+
+function getTransporter() {
+  if (!process.env.SMTP_HOST) return null
+  return nodemailer.createTransport({
+    host: process.env.SMTP_HOST,
+    port: parseInt(process.env.SMTP_PORT || '587'),
+    secure: process.env.SMTP_SECURE === 'true',
+    auth: {
+      user: process.env.SMTP_USER,
+      pass: process.env.SMTP_PASS,
+    },
+  })
+}
 
 export async function sendEmail({ to, subject, html }) {
-  const apiKey = process.env.RESEND_API_KEY
-  if (!apiKey) {
-    throw new Error('RESEND_API_KEY 未配置')
+  const transporter = getTransporter()
+  if (!transporter) {
+    throw new Error('SMTP未配置：缺少SMTP_HOST环境变量')
   }
-  const from = process.env.SMTP_FROM || 'BlogHub <onboarding@resend.dev>'
-  const res = await fetch(RESEND_API, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ from, to: [to], subject, html }),
+  await transporter.sendMail({
+    from: process.env.SMTP_FROM || 'noreply@bloghub.com',
+    to,
+    subject,
+    html,
   })
-  if (!res.ok) {
-    const body = await res.json().catch(() => ({}))
-    throw new Error(body.message || `Resend API 错误: ${res.status}`)
-  }
 }
 
 export function sendVerificationCode(email, code) {
