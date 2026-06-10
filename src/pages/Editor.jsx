@@ -56,6 +56,7 @@ export default function Editor() {
   const [showDraftBanner, setShowDraftBanner] = useState(false)
   const [draftSaved, setDraftSaved] = useState(false)
   const [saveError, setSaveError] = useState(null)
+  const [previewLightbox, setPreviewLightbox] = useState(null)
 
   const draftTimerRef = useRef(null)
   const textareaRef = useRef(null)
@@ -395,7 +396,25 @@ export default function Editor() {
                 className="w-full h-64 object-cover rounded-xl mb-6"
               />
             )}
-            <div className="prose" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(parseMarkdown(formData.content)) }} />
+            <div
+              className="prose"
+              dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(parseMarkdown(formData.content)) }}
+              onClick={(e) => {
+                const img = e.target.closest('img')
+                if (!img) return
+                const link = img.closest('a')
+                const src = link?.href || img.src
+                if (src && src.startsWith('http')) {
+                  e.preventDefault()
+                  setPreviewLightbox(src)
+                }
+              }}
+            />
+            {previewLightbox && (
+              <div className="lightbox-overlay" onClick={() => setPreviewLightbox(null)}>
+                <img src={previewLightbox} alt="" onClick={(e) => e.stopPropagation()} />
+              </div>
+            )}
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-6">
@@ -566,7 +585,20 @@ export default function Editor() {
                     className={`${splitView ? 'w-full md:w-1/2 md:border-r border-b md:border-b-0 border-gray-200 dark:border-gray-600' : 'w-full'} h-96 p-4 focus:outline-none resize-none font-mono bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100`}
                   />
                   {splitView && (
-                    <div className="w-full md:w-1/2 h-96 p-4 overflow-y-auto prose bg-gray-50 dark:bg-gray-800" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(parseMarkdown(formData.content)) || '<p class="text-gray-400 dark:text-gray-500">预览将在此显示...</p>' }} />
+                    <div
+                      className="w-full md:w-1/2 h-96 p-4 overflow-y-auto prose bg-gray-50 dark:bg-gray-800"
+                      dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(parseMarkdown(formData.content)) || '<p class="text-gray-400 dark:text-gray-500">预览将在此显示...</p>' }}
+                      onClick={(e) => {
+                        const img = e.target.closest('img')
+                        if (!img) return
+                        const link = img.closest('a')
+                        const src = link?.href || img.src
+                        if (src && src.startsWith('http')) {
+                          e.preventDefault()
+                          setPreviewLightbox(src)
+                        }
+                      }}
+                    />
                   )}
                 </div>
               </div>

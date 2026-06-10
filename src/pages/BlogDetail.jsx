@@ -9,6 +9,13 @@ import { useSEO } from '../hooks/useSEO'
 import LoadingSpinner from '../components/LoadingSpinner'
 import SyntaxHighlight from '../components/SyntaxHighlight'
 import DOMPurify from 'dompurify'
+
+DOMPurify.addHook('afterSanitizeAttributes', (node) => {
+  if (node.tagName === 'A' && node.getAttribute('href')?.startsWith('http')) {
+    node.setAttribute('target', '_blank')
+    node.setAttribute('rel', 'noopener noreferrer')
+  }
+})
 import useTableOfContents from '../components/TableOfContents'
 import { ShareButtons, CodeCopyButton } from '../components/ShareButtons'
 import RelatedPosts from '../components/RelatedPosts'
@@ -218,7 +225,7 @@ export default function BlogDetail() {
 
       <article className="bg-white dark:bg-gray-800 rounded-2xl overflow-hidden">
         {post.coverImage && (
-          <div className="aspect-video">
+          <div className="aspect-video cursor-zoom-in" onClick={() => setLightboxSrc(post.coverImage)}>
             <img
               src={post.coverImage}
               alt={post.title}
@@ -276,10 +283,13 @@ export default function BlogDetail() {
                   className="prose max-w-none mb-8"
                   dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(parseMarkdown(displayContent)) }}
                   onClick={(e) => {
-                    const link = e.target.closest('.prose-img-link')
-                    if (link) {
+                    const img = e.target.closest('img')
+                    if (!img) return
+                    const link = img.closest('a')
+                    const src = link?.href || img.src
+                    if (src && src.startsWith('http')) {
                       e.preventDefault()
-                      setLightboxSrc(link.href)
+                      setLightboxSrc(src)
                     }
                   }}
                 />
