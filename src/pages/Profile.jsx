@@ -157,6 +157,11 @@ export default function Profile() {
                           <Pin size={10} /> 已置顶
                         </span>
                       )}
+                      {post.isPinned && (
+                        <span className="px-1.5 py-0.5 rounded text-xs bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300 flex items-center gap-0.5 flex-shrink-0">
+                          <Pin size={10} /> 精选
+                        </span>
+                      )}
                       <Link to={`/blog/${post.id}`} className="font-bold hover:text-primary transition dark:text-gray-200 truncate">
                         {post.title}
                       </Link>
