@@ -1,24 +1,21 @@
 import { Router } from 'express'
 import multer from 'multer'
-import { extname, join } from 'path'
-import { fileURLToPath } from 'url'
-import { dirname } from 'path'
-import { randomUUID } from 'crypto'
-import { readdirSync, unlinkSync, existsSync, statSync } from 'fs'
-import { basename } from 'path'
+import { uploadStream, listImages, deleteImage } from '../utils/cloudinary.js'
 import { authRequired } from '../middleware/auth.js'
-
-const __dirname = dirname(fileURLToPath(import.meta.url))
-const uploadsDir = join(__dirname, '..', '..', 'uploads')
-
-const storage = multer.diskStorage({
-  destination: (_req, _file, cb) => cb(null, uploadsDir),
-  filename: (_req, file, cb) => cb(null, randomUUID() + extname(file.originalname)),
-})
+import cloudinary from '../utils/cloudinary.js'
 
 const upload = multer({
-  storage,
+  storage: multer.memoryStorage(),
   limits: { fileSize: 5 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    const allowed = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
+    cb(null, allowed.includes(file.mimetype))
+  },
+})
+
+const avatarUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 2 * 1024 * 1024 },
   fileFilter: (_req, file, cb) => {
     const allowed = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
     cb(null, allowed.includes(file.mimetype))
@@ -27,50 +24,21 @@ const upload = multer({
 
 const router = Router()
 
-// Public avatar upload (for registration)
-const avatarUpload = multer({
-  storage,
-  limits: { fileSize: 2 * 1024 * 1024 },
-  fileFilter: (_req, file, cb) => {
-    const allowed = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
-    cb(null, allowed.includes(file.mimetype))
-  },
-})
-
 router.post('/avatar', avatarUpload.single('avatar'), async (req, res) => {
-  if (!req.file) {
-    return res.status(400).json({ message: '请选择图片文件' })
-  }
-  let url = `/uploads/${req.file.filename}`
+  if (!req.file) return res.status(400).json({ message: '请选择图片文件' })
   try {
-    const sharp = (await import('sharp')).default
-    const ext = extname(req.file.filename)
-    const base = req.file.filename.replace(ext, '')
-    await sharp(req.file.path)
-      .resize(300, 300, { fit: 'cover' })
-      .webp({ quality: 80 })
-      .toFile(join(uploadsDir, base + '_thumb.webp'))
-    url = `/uploads/${base}_thumb.webp`
-  } catch {}
-  res.json({ url })
+    const result = await uploadStream(req.file.buffer, {
+      transformation: [{ width: 300, height: 300, crop: 'fill', format: 'webp', quality: 80 }],
+    })
+    res.json({ url: result.secure_url })
+  } catch {
+    res.status(500).json({ message: '头像上传失败' })
+  }
 })
 
-router.get('/', authRequired, (_req, res) => {
+router.get('/', authRequired, async (_req, res) => {
   try {
-    if (!existsSync(uploadsDir)) return res.json({ images: [] })
-    const files = readdirSync(uploadsDir)
-    const images = files
-      .filter(f => /\.(jpg|jpeg|png|gif|webp)$/i.test(f))
-      .map(f => {
-        const stat = statSync(join(uploadsDir, f))
-        return {
-          filename: f,
-          url: `/uploads/${f}`,
-          size: stat.size,
-          uploadedAt: stat.mtime.toISOString(),
-        }
-      })
-      .sort((a, b) => new Date(b.uploadedAt) - new Date(a.uploadedAt))
+    const images = await listImages()
     res.json({ images })
   } catch {
     res.json({ images: [] })
@@ -78,40 +46,22 @@ router.get('/', authRequired, (_req, res) => {
 })
 
 router.post('/', authRequired, upload.single('image'), async (req, res) => {
-  if (!req.file) {
-    return res.status(400).json({ message: '请选择图片文件' })
-  }
-  const url = `/uploads/${req.file.filename}`
-
-  // Generate thumbnail + WebP (non-blocking)
+  if (!req.file) return res.status(400).json({ message: '请选择图片文件' })
   try {
-    const sharp = (await import('sharp')).default
-    const ext = extname(req.file.filename)
-    const base = req.file.filename.replace(ext, '')
-
-    // Thumbnail (300px wide WebP)
-    await sharp(req.file.path)
-      .resize(300, 300, { fit: 'inside' })
-      .webp({ quality: 80 })
-      .toFile(join(uploadsDir, base + '_thumb.webp'))
-
-    // Full size WebP
-    await sharp(req.file.path)
-      .webp({ quality: 85 })
-      .toFile(join(uploadsDir, base + '.webp'))
-  } catch {}
-
-  res.json({ url })
+    const result = await uploadStream(req.file.buffer)
+    res.json({ url: result.secure_url })
+  } catch {
+    res.status(500).json({ message: '图片上传失败' })
+  }
 })
 
-router.delete('/:filename', authRequired, (req, res) => {
-  const safeFilename = basename(req.params.filename)
-  const filepath = join(uploadsDir, safeFilename)
-  if (!existsSync(filepath)) {
-    return res.status(404).json({ message: '文件不存在' })
+router.delete('/:filename', authRequired, async (req, res) => {
+  try {
+    await deleteImage(req.params.filename)
+    res.json({ success: true })
+  } catch {
+    res.status(500).json({ message: '删除失败' })
   }
-  unlinkSync(filepath)
-  res.json({ success: true })
 })
 
 export default router
