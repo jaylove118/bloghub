@@ -85,6 +85,40 @@ export function sendPasswordResetEmail(email, token) {
   })
 }
 
+export function sendSubscribeConfirmation(email, token) {
+  const siteUrl = process.env.SITE_URL || 'http://localhost:5173'
+  const verifyUrl = `${siteUrl}/api/subscribers/verify?token=${token}`
+  return sendEmail({
+    to: email,
+    subject: '确认订阅 BlogHub 博客更新',
+    html: `<!DOCTYPE html>
+<html lang="zh-CN">
+<head><meta charset="utf-8"></head>
+<body style="margin:0;padding:0;background:#f4f6f9;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f6f9;padding:40px 0">
+  <tr><td align="center">
+    <table width="480" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.06)">
+      <tr><td style="background:linear-gradient(135deg,#3b82f6,#6366f1);padding:32px 40px;text-align:center">
+        <h1 style="margin:0;color:#fff;font-size:24px;font-weight:700">BlogHub</h1>
+        <p style="margin:8px 0 0;color:rgba(255,255,255,.85);font-size:14px">订阅确认</p>
+      </td></tr>
+      <tr><td style="padding:40px">
+        <p style="margin:0 0 8px;color:#4b5563;font-size:15px">你好，</p>
+        <p style="margin:0 0 24px;color:#6b7280;font-size:14px;line-height:1.6">感谢订阅 BlogHub！点击下方按钮确认你的邮箱地址，即可接收最新文章推送。</p>
+        <table width="100%" cellpadding="0" cellspacing="0">
+          <tr><td align="center">
+            <a href="${verifyUrl}" style="display:inline-block;background:#3b82f6;color:#fff;text-decoration:none;padding:14px 40px;border-radius:9999px;font-size:15px;font-weight:600">确认订阅</a>
+          </td></tr>
+        </table>
+        <p style="margin:24px 0 0;color:#9ca3af;font-size:12px;line-height:1.6">如果按钮无法点击，请复制以下链接：<br><a href="${verifyUrl}" style="color:#3b82f6">${verifyUrl}</a></p>
+      </td></tr>
+    </table>
+  </td></tr>
+</table>
+</body></html>`,
+  })
+}
+
 export function sendCommentNotification(email, postTitle, commenterName) {
   const siteUrl = process.env.SITE_URL || 'http://localhost:5173'
   return sendEmail({

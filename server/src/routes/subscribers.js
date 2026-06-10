@@ -2,6 +2,7 @@ import { Router } from 'express'
 import crypto from 'crypto'
 import pool from '../config/db.js'
 import { validate } from '../middleware/validate.js'
+import { sendSubscribeConfirmation } from '../utils/email.js'
 
 const router = Router()
 
@@ -13,7 +14,11 @@ router.post('/subscribe', validate({ email: { required: true, max: 100 } }), asy
       'INSERT INTO subscribers (email, verify_token) VALUES (?, ?) ON DUPLICATE KEY UPDATE verify_token = ?',
       [email, token, token]
     )
-    // In production, send verification email here
+    try {
+      await sendSubscribeConfirmation(email, token)
+    } catch {
+      // Email send failed, but subscription is recorded — user can still verify later
+    }
     res.json({ message: '订阅成功，请查看邮箱确认' })
   } catch (err) {
     next(err)

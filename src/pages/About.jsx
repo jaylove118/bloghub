@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Heart, Users, BookOpen, Send, MessageSquare, Bug, Lightbulb, ThumbsUp } from 'lucide-react'
+import { Heart, Users, BookOpen, Send, MessageSquare, Bug, Lightbulb, ThumbsUp, CheckCircle, X } from 'lucide-react'
 import { useSEO } from '../hooks/useSEO'
 import { api } from '../context/api'
 import { useAuth } from '../context/AuthContext'
@@ -80,16 +80,18 @@ export default function About() {
         </h2>
 
         {sent ? (
-          <div className="text-center py-8">
-            <div className="text-4xl mb-3">🎉</div>
-            <h3 className="text-xl font-bold mb-2">感谢你的反馈！</h3>
-            <p className="text-gray-500 dark:text-gray-400">我们会认真对待每一条建议</p>
+          <div className="relative bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl p-6 animate-slide-up">
             <button
               onClick={() => { setSent(false); setForm({ name: '', email: '', type: 'suggestion', content: '' }) }}
-              className="mt-4 text-primary hover:underline"
+              className="absolute top-3 right-3 p-1 text-green-600 dark:text-green-400 hover:bg-green-100 dark:hover:bg-green-800/40 rounded-lg transition"
             >
-              继续反馈
+              <X size={18} />
             </button>
+            <div className="flex items-center gap-3 mb-2">
+              <CheckCircle className="text-green-500" size={28} />
+              <h3 className="text-xl font-bold text-green-800 dark:text-green-300">感谢你的反馈！</h3>
+            </div>
+            <p className="text-green-700 dark:text-green-400 ml-11">我们会认真对待每一条建议，持续改进 BlogHub。</p>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
