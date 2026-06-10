@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { Share2, Copy, Check, X, MessageCircle } from 'lucide-react'
 
@@ -7,23 +7,36 @@ export function ShareButtons({ title, url }) {
   const shareUrl = url || window.location.href
   const shareTitle = title || document.title
 
+  const copyText = async (text, msg) => {
+    try {
+      await navigator.clipboard.writeText(text)
+    } catch {
+      const ta = document.createElement('textarea')
+      ta.value = text
+      ta.style.position = 'fixed'
+      ta.style.left = '-9999px'
+      document.body.appendChild(ta)
+      ta.select()
+      document.execCommand('copy')
+      document.body.removeChild(ta)
+    }
+    alert(msg)
+  }
+
   const shareLinks = [
     {
       name: '微信',
       icon: <MessageCircle size={18} />,
       color: 'bg-green-500 hover:bg-green-600',
-      action: () => {
-        navigator.clipboard.writeText(`${shareTitle}\n${shareUrl}`).then(() => {
-          alert('链接已复制，可粘贴到微信分享')
-        })
-      },
+      action: () => copyText(`${shareTitle}\n${shareUrl}`, '链接已复制，可粘贴到微信分享'),
     },
     {
       name: '微博',
       icon: <Share2 size={18} />,
       color: 'bg-red-500 hover:bg-red-600',
       action: () => {
-        window.open(`https://service.weibo.com/share/share.php?title=${encodeURIComponent(shareTitle)}&url=${encodeURIComponent(shareUrl)}`, '_blank', 'width=600,height=400')
+        const w = window.open(`https://service.weibo.com/share/share.php?title=${encodeURIComponent(shareTitle)}&url=${encodeURIComponent(shareUrl)}`, '_blank', 'width=600,height=400')
+        if (!w) copyText(shareUrl, '弹窗被拦截，链接已复制，可手动粘贴分享')
       },
     },
     {
@@ -31,18 +44,15 @@ export function ShareButtons({ title, url }) {
       icon: <MessageCircle size={18} />,
       color: 'bg-blue-500 hover:bg-blue-600',
       action: () => {
-        window.open(`https://connect.qq.com/widget/shareqq/index.html?title=${encodeURIComponent(shareTitle)}&url=${encodeURIComponent(shareUrl)}`, '_blank', 'width=600,height=400')
+        const w = window.open(`https://connect.qq.com/widget/shareqq/index.html?title=${encodeURIComponent(shareTitle)}&url=${encodeURIComponent(shareUrl)}`, '_blank', 'width=600,height=400')
+        if (!w) copyText(shareUrl, '弹窗被拦截，链接已复制，可手动粘贴分享')
       },
     },
     {
       name: '复制链接',
       icon: <Copy size={18} />,
       color: 'bg-gray-500 hover:bg-gray-600',
-      action: () => {
-        navigator.clipboard.writeText(shareUrl).then(() => {
-          alert('链接已复制到剪贴板')
-        })
-      },
+      action: () => copyText(shareUrl, '链接已复制到剪贴板'),
     },
   ]
 
