@@ -39,6 +39,7 @@ app.use(helmet({
       styleSrc: ["'self'", 'https://fonts.googleapis.com'],
       fontSrc: ["'self'", 'https://fonts.gstatic.com'],
       imgSrc: ["'self'", 'data:', 'blob:', 'https://api.dicebear.com', 'https://res.cloudinary.com'],
+      mediaSrc: ["'self'", 'data:', 'blob:'],
       connectSrc: ["'self'"],
     },
   } : false,
