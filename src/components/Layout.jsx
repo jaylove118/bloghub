@@ -71,10 +71,7 @@ export default function Layout() {
     }
   }
 
-  const isActive = (path) => {
-    if (path === '/') return location.pathname === '/'
-    return location.pathname.startsWith(path)
-  }
+  const isActive = (path) => location.pathname === path
 
   const navLinkClass = (path) =>
     `nav-link flex items-center gap-1 transition-colors duration-200${
@@ -113,7 +110,7 @@ export default function Layout() {
             <Link to="/" className={navLinkClass('/')}><Home size={18} />首页</Link>
             <Link to="/blogs" className={navLinkClass('/blogs')}><FileText size={18} />博客</Link>
             {isAuthenticated && (
-              <Link to={`/profile/${user?.id}`} className={navLinkClass('/profile')}><User size={18} />我的主页</Link>
+              <Link to={`/profile/${user?.id}`} className={navLinkClass(`/profile/${user?.id}`)}><User size={18} />我的主页</Link>
             )}
             <Link to="/about" className={navLinkClass('/about')}>关于</Link>
           </nav>
