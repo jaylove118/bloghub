@@ -236,7 +236,7 @@ router.post('/send-reset-code', async (req, res, next) => {
       [email, code]
     )
 
-    sendVerificationCode(email, code).catch(() => {})
+    sendVerificationCode(email, code, 'reset').catch(() => {})
 
     res.json({ message: '验证码已发送' })
   } catch (err) {

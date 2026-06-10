@@ -46,10 +46,15 @@ export async function sendEmail({ to, subject, html }) {
   })
 }
 
-export function sendVerificationCode(email, code) {
+export function sendVerificationCode(email, code, purpose = 'register') {
+  const isReset = purpose === 'reset'
+  const subtitle = isReset ? '找回密码' : '邮箱验证码'
+  const bodyText = isReset
+    ? '你正在找回 BlogHub 账户密码，请使用以下验证码完成验证：'
+    : '你正在注册 BlogHub 账户，请使用以下验证码完成邮箱验证：'
   return sendEmail({
     to: email,
-    subject: 'BlogHub 邮箱验证码',
+    subject: isReset ? 'BlogHub 找回密码验证码' : 'BlogHub 邮箱验证码',
     html: `<!DOCTYPE html>
 <html lang="zh-CN">
 <head><meta charset="utf-8"></head>
@@ -57,10 +62,10 @@ export function sendVerificationCode(email, code) {
 <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f6f9;padding:40px 0">
   <tr><td align="center">
     <table width="480" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.06)">
-      ${EMAIL_HEADER.replace('{{subtitle}}', '邮箱验证码')}
+      ${EMAIL_HEADER.replace('{{subtitle}}', subtitle)}
       <tr><td style="padding:40px">
         <p style="margin:0 0 8px;color:#4b5563;font-size:15px">你好，</p>
-        <p style="margin:0 0 24px;color:#6b7280;font-size:14px;line-height:1.6">你正在注册 BlogHub 账户，请使用以下验证码完成邮箱验证：</p>
+        <p style="margin:0 0 24px;color:#6b7280;font-size:14px;line-height:1.6">${bodyText}</p>
         <table width="100%" cellpadding="0" cellspacing="0">
           <tr><td align="center" style="background:#f0f5ff;border:2px dashed #3b82f6;border-radius:12px;padding:24px">
             <span style="font-family:'SF Mono','Cascadia Code',Consolas,monospace;font-size:36px;font-weight:700;letter-spacing:10px;color:#3b82f6">${code}</span>
