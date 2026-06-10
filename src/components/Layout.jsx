@@ -16,6 +16,7 @@ export default function Layout() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [popularTags, setPopularTags] = useState([])
+  const [tagsExpanded, setTagsExpanded] = useState(false)
 
   useEffect(() => {
     api.posts.getTags().then(setPopularTags).catch(() => {})
@@ -218,17 +219,30 @@ export default function Layout() {
                 {(function () {
                   const dbValid = popularTags.map(t => t.tag).filter(t => TAG_WHITELIST.has(t))
                   const merged = [...new Set([...POPULAR_TAGS, ...dbValid])]
-                  return merged.map(tag => (
-                    <button
-                      key={tag}
-                      onClick={() => handleTagToggle(tag)}
-                      className={`px-3 py-1 rounded-full text-sm transition ${
-                        currentTags.includes(tag) ? 'bg-primary text-white' : 'bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600'
-                      }`}
-                    >
-                      {tag}
-                    </button>
-                  ))
+                  const visible = tagsExpanded ? merged : merged.slice(0, 15)
+                  return (
+                    <>
+                      {visible.map(tag => (
+                        <button
+                          key={tag}
+                          onClick={() => handleTagToggle(tag)}
+                          className={`px-3 py-1 rounded-full text-sm transition ${
+                            currentTags.includes(tag) ? 'bg-primary text-white' : 'bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600'
+                          }`}
+                        >
+                          {tag}
+                        </button>
+                      ))}
+                      {merged.length > 15 && (
+                        <button
+                          onClick={() => setTagsExpanded(!tagsExpanded)}
+                          className="px-3 py-1 rounded-full text-sm text-gray-500 dark:text-gray-400 hover:text-primary hover:bg-gray-100 dark:hover:bg-gray-700 transition"
+                        >
+                          {tagsExpanded ? '收起 ▲' : `展开更多 (${merged.length - 15}+) ▼`}
+                        </button>
+                      )}
+                    </>
+                  )
                 })()}
               </div>
             </div>
