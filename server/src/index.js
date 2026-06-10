@@ -15,6 +15,7 @@ import userRoutes from './routes/users.js'
 import uploadRoutes from './routes/upload.js'
 import notificationRoutes from './routes/notifications.js'
 import subscriberRoutes from './routes/subscribers.js'
+import feedbackRoutes from './routes/feedback.js'
 import { authRequired, adminRequired } from './middleware/auth.js'
 import swaggerDoc from './config/swagger.js'
 
@@ -104,6 +105,7 @@ app.use('/api/users', userRoutes)
 app.use('/api/upload', uploadRoutes)
 app.use('/api/notifications', notificationRoutes)
 app.use('/api/subscribers', subscriberRoutes)
+app.use('/api/feedback', feedbackRoutes)
 
 app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok', timestamp: Date.now() })

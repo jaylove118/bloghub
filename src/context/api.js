@@ -328,4 +328,13 @@ export const api = {
       })
     },
   },
+
+  feedback: {
+    async send(data) {
+      return await request('/feedback', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      })
+    },
+  },
 }
