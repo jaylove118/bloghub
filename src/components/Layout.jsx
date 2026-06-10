@@ -214,17 +214,22 @@ export default function Layout() {
             <div className="mb-6">
               <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-3">热门标签</h3>
               <div className="flex flex-wrap gap-2">
-                {(popularTags.length ? popularTags : [{ tag: 'React', count: 1 }, { tag: 'JavaScript', count: 1 }, { tag: 'CSS', count: 1 }, { tag: 'Node.js', count: 1 }, { tag: 'Python', count: 1 }]).map(({ tag }) => (
-                  <button
-                    key={tag}
-                    onClick={() => handleTagToggle(tag)}
-                    className={`px-3 py-1 rounded-full text-sm transition ${
-                      currentTags.includes(tag) ? 'bg-primary text-white' : 'bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600'
-                    }`}
-                  >
-                    {tag}
-                  </button>
-                ))}
+                {(function () {
+                  const defaults = ['React', 'JavaScript', 'CSS', 'Node.js', 'Python', 'C++']
+                  const dbTags = popularTags.map(t => t.tag)
+                  const merged = [...new Set([...defaults, ...dbTags])]
+                  return merged.map(tag => (
+                    <button
+                      key={tag}
+                      onClick={() => handleTagToggle(tag)}
+                      className={`px-3 py-1 rounded-full text-sm transition ${
+                        currentTags.includes(tag) ? 'bg-primary text-white' : 'bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600'
+                      }`}
+                    >
+                      {tag}
+                    </button>
+                  ))
+                })()}
               </div>
             </div>
 
