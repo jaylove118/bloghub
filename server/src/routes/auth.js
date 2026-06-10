@@ -39,8 +39,7 @@ router.post('/send-verify-code', async (req, res, next) => {
       [email, code]
     )
 
-    const sent = await sendVerificationCode(email, code)
-    if (!sent) throw new AppError(500, '验证码发送失败，请稍后重试')
+    await sendVerificationCode(email, code)
 
     res.json({ message: '验证码已发送' })
   } catch (err) {
@@ -221,8 +220,7 @@ router.post('/send-reset-code', async (req, res, next) => {
       [email, code]
     )
 
-    const sent = await sendVerificationCode(email, code)
-    if (!sent) throw new AppError(500, '验证码发送失败，请稍后重试')
+    await sendVerificationCode(email, code)
 
     res.json({ message: '验证码已发送' })
   } catch (err) {

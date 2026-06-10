@@ -16,19 +16,14 @@ function getTransporter() {
 export async function sendEmail({ to, subject, html }) {
   const transporter = getTransporter()
   if (!transporter) {
-    return false
+    throw new Error('SMTP未配置：缺少SMTP_HOST环境变量')
   }
-  try {
-    await transporter.sendMail({
-      from: process.env.SMTP_FROM || 'noreply@bloghub.com',
-      to,
-      subject,
-      html,
-    })
-    return true
-  } catch (err) {
-    return false
-  }
+  await transporter.sendMail({
+    from: process.env.SMTP_FROM || 'noreply@bloghub.com',
+    to,
+    subject,
+    html,
+  })
 }
 
 export function sendVerificationCode(email, code) {
