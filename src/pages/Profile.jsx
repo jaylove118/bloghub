@@ -188,32 +188,37 @@ export default function Profile() {
                       </span>
                     </div>
                   </div>
+                  {isOwn && (
+                    <div className="flex items-center gap-1 ml-auto pl-3 flex-shrink-0 self-start pt-0.5">
+                      <button
+                        onClick={(e) => handleProfilePin(e, post.id)}
+                        className={`p-1.5 rounded-lg transition flex items-center gap-1 text-xs ${
+                          post.isProfilePinned
+                            ? 'text-blue-600 bg-blue-50 dark:bg-blue-900/30 dark:text-blue-400'
+                            : 'text-gray-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/30 border border-dashed border-gray-300 dark:border-gray-600'
+                        }`}
+                        title={post.isProfilePinned ? '取消置顶' : '置顶到主页顶部'}
+                      >
+                        <Pin size={13} fill={post.isProfilePinned ? 'currentColor' : 'none'} />
+                        {post.isProfilePinned ? '已置顶' : '置顶'}
+                      </button>
+                      <button
+                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); navigate('/editor/' + post.id) }}
+                        className="p-1.5 rounded-lg text-gray-400 hover:text-primary hover:bg-gray-100 dark:hover:bg-gray-700 transition"
+                        title="编辑"
+                      >
+                        <Edit size={13} />
+                      </button>
+                      <button
+                        onClick={(e) => handleDeletePost(e, post.id)}
+                        className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 transition"
+                        title="删除"
+                      >
+                        <Trash2 size={13} />
+                      </button>
+                    </div>
+                  )}
                 </div>
-                {isOwn && (
-                  <div className="absolute top-2 right-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button
-                      onClick={(e) => handleProfilePin(e, post.id)}
-                      className={`p-1.5 rounded transition ${post.isProfilePinned ? 'text-blue-500 bg-blue-50 dark:bg-blue-900/30' : 'text-gray-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/30'}`}
-                      title={post.isProfilePinned ? '取消置顶' : '在个人主页置顶'}
-                    >
-                      <Pin size={14} fill={post.isProfilePinned ? 'currentColor' : 'none'} />
-                    </button>
-                    <button
-                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); navigate('/editor/' + post.id) }}
-                      className="p-1.5 rounded text-gray-400 hover:text-primary hover:bg-gray-100 dark:hover:bg-gray-700 transition"
-                      title="编辑文章"
-                    >
-                      <Edit size={14} />
-                    </button>
-                    <button
-                      onClick={(e) => handleDeletePost(e, post.id)}
-                      className="p-1.5 rounded text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 transition"
-                      title="删除文章"
-                    >
-                      <Trash2 size={14} />
-                    </button>
-                  </div>
-                )}
               </div>
             ))}
           </div>
