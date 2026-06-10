@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import { useParams, Link, useNavigate } from 'react-router-dom'
 import { api } from '../context/api'
 import { useAuth } from '../context/AuthContext'
-import { Calendar, Link as LinkIcon, Heart, MessageCircle, Eye, Clock } from 'lucide-react'
+import { Calendar, Link as LinkIcon, Heart, MessageCircle, Eye, Clock, Pin, Edit, Trash2 } from 'lucide-react'
 import { formatFullDate } from '../utils/constants'
 import LoadingSpinner from '../components/LoadingSpinner'
 import { useSEO } from '../hooks/useSEO'
@@ -15,6 +15,26 @@ export default function Profile() {
   const [loading, setLoading] = useState(true)
 
   const isOwn = currentUser?.id === id
+  const navigate = useNavigate()
+
+  const handleProfilePin = async (e, postId) => {
+    e.preventDefault()
+    e.stopPropagation()
+    try {
+      const newPinned = await api.posts.profilePin(postId)
+      setPosts(prev => prev.map(p => p.id === postId ? { ...p, isProfilePinned: newPinned } : p))
+    } catch {}
+  }
+
+  const handleDeletePost = async (e, postId) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if (!window.confirm('确定要删除这篇文章吗？此操作不可撤销。')) return
+    try {
+      await api.posts.delete(postId)
+      setPosts(prev => prev.filter(p => p.id !== postId))
+    } catch {}
+  }
 
   useSEO({
     title: profile?.username ? profile.username + ' 的个人资料 - BlogHub' : 'BlogHub',
@@ -116,21 +136,31 @@ export default function Profile() {
         ) : (
           <div className="space-y-4">
             {posts.map((post) => (
-              <Link
+              <div
                 key={post.id}
-                to={`/blog/${post.id}`}
-                className="block bg-white dark:bg-gray-800 rounded-xl p-4 hover:shadow-md transition"
+                className="bg-white dark:bg-gray-800 rounded-xl p-4 hover:shadow-md transition relative group"
               >
                 <div className="flex gap-4">
                   {post.coverImage && (
-                    <img
-                      src={post.coverImage}
-                      alt={post.title}
-                      className="w-24 h-24 object-cover rounded-lg flex-shrink-0"
-                    />
+                    <Link to={`/blog/${post.id}`}>
+                      <img
+                        src={post.coverImage}
+                        alt={post.title}
+                        className="w-24 h-24 object-cover rounded-lg flex-shrink-0"
+                      />
+                    </Link>
                   )}
-                  <div className="flex-1">
-                    <h3 className="font-bold hover:text-primary transition dark:text-gray-200">{post.title}</h3>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      {post.isProfilePinned && (
+                        <span className="px-1.5 py-0.5 rounded text-xs bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300 flex items-center gap-0.5 flex-shrink-0">
+                          <Pin size={10} /> 已置顶
+                        </span>
+                      )}
+                      <Link to={`/blog/${post.id}`} className="font-bold hover:text-primary transition dark:text-gray-200 truncate">
+                        {post.title}
+                      </Link>
+                    </div>
                     <p className="text-sm text-gray-600 dark:text-gray-400 mt-1 line-clamp-2">
                       {post.excerpt || post.content.replace(/[#*`]/g, '').slice(0, 100)}
                     </p>
@@ -154,7 +184,32 @@ export default function Profile() {
                     </div>
                   </div>
                 </div>
-              </Link>
+                {isOwn && (
+                  <div className="absolute top-2 right-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button
+                      onClick={(e) => handleProfilePin(e, post.id)}
+                      className={`p-1.5 rounded transition ${post.isProfilePinned ? 'text-blue-500 bg-blue-50 dark:bg-blue-900/30' : 'text-gray-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/30'}`}
+                      title={post.isProfilePinned ? '取消置顶' : '在个人主页置顶'}
+                    >
+                      <Pin size={14} fill={post.isProfilePinned ? 'currentColor' : 'none'} />
+                    </button>
+                    <button
+                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); navigate('/editor/' + post.id) }}
+                      className="p-1.5 rounded text-gray-400 hover:text-primary hover:bg-gray-100 dark:hover:bg-gray-700 transition"
+                      title="编辑文章"
+                    >
+                      <Edit size={14} />
+                    </button>
+                    <button
+                      onClick={(e) => handleDeletePost(e, post.id)}
+                      className="p-1.5 rounded text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 transition"
+                      title="删除文章"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                )}
+              </div>
             ))}
           </div>
         )}

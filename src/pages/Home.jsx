@@ -9,7 +9,7 @@ import CoverPlaceholder from '../components/CoverPlaceholder'
 import { useSEO } from '../hooks/useSEO'
 
 export default function Home() {
-  const { isAuthenticated } = useAuth()
+  const { isAuthenticated, isAdmin } = useAuth()
   const [posts, setPosts] = useState([])
   const [featuredPost, setFeaturedPost] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -35,6 +35,16 @@ export default function Home() {
     }
     fetchPosts()
   }, [])
+
+  const handleToggleFeature = async (e, postId) => {
+    e.preventDefault()
+    e.stopPropagation()
+    try {
+      const newPinned = await api.posts.pin(postId)
+      setPosts(prev => prev.map(p => p.id === postId ? { ...p, isPinned: newPinned } : p))
+      setFeaturedPost(prev => prev?.id === postId ? { ...prev, isPinned: newPinned } : prev)
+    } catch {}
+  }
 
   if (loading) {
     return <LoadingSpinner />
@@ -199,6 +209,15 @@ export default function Home() {
                       <span className="px-1.5 py-0.5 rounded text-xs bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300 flex items-center gap-0.5">
                         <Pin size={10} /> 精选
                       </span>
+                    )}
+                    {isAdmin && (
+                      <button
+                        onClick={(e) => handleToggleFeature(e, post.id)}
+                        className={`p-1 rounded transition ${post.isPinned ? 'text-amber-500 hover:text-amber-600' : 'text-gray-300 hover:text-amber-400'}`}
+                        title={post.isPinned ? '取消精选' : '设为精选'}
+                      >
+                        <Pin size={14} fill={post.isPinned ? 'currentColor' : 'none'} />
+                      </button>
                     )}
                     {post.tags?.slice(0, 2).map((tag) => (
                       <span key={tag} className="px-2 py-0.5 bg-gray-100 rounded text-xs text-gray-600 dark:text-gray-400">

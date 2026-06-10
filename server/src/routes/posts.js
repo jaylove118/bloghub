@@ -71,7 +71,10 @@ router.get('/', async (req, res, next) => {
     )
     const total = countResult[0].total
 
-    const sql = 'SELECT p.*, u.username AS author_name, u.avatar AS author_avatar, (SELECT COUNT(*) FROM comments c WHERE c.post_id = p.id) AS comment_count FROM posts p JOIN users u ON p.author_id = u.id' + where + ' ORDER BY p.is_pinned DESC, p.created_at DESC LIMIT ? OFFSET ?'
+    const orderBy = authorId
+      ? ' ORDER BY p.is_profile_pinned DESC, p.is_pinned DESC, p.created_at DESC'
+      : ' ORDER BY p.is_pinned DESC, p.created_at DESC'
+    const sql = 'SELECT p.*, u.username AS author_name, u.avatar AS author_avatar, (SELECT COUNT(*) FROM comments c WHERE c.post_id = p.id) AS comment_count FROM posts p JOIN users u ON p.author_id = u.id' + where + orderBy + ' LIMIT ? OFFSET ?'
     params.push(limitNum, offset)
 
     const [rows] = await pool.query(sql, params)
@@ -345,6 +348,21 @@ router.put('/:id/pin', authRequired, adminRequired, async (req, res, next) => {
     const newPinned = existing[0].is_pinned ? 0 : 1
     await pool.query('UPDATE posts SET is_pinned = ? WHERE id = ?', [newPinned, id])
     res.json({ isPinned: Boolean(newPinned) })
+  } catch (err) {
+    next(err)
+  }
+})
+
+router.put('/:id/profile-pin', authRequired, async (req, res, next) => {
+  try {
+    const { id } = req.params
+    const [existing] = await pool.query('SELECT author_id, is_profile_pinned FROM posts WHERE id = ?', [id])
+    if (existing.length === 0) throw new AppError(404, '文章不存在')
+    if (existing[0].author_id !== req.userId) throw new AppError(403, '无权操作他人文章')
+
+    const newPinned = existing[0].is_profile_pinned ? 0 : 1
+    await pool.query('UPDATE posts SET is_profile_pinned = ? WHERE id = ?', [newPinned, id])
+    res.json({ isProfilePinned: Boolean(newPinned) })
   } catch (err) {
     next(err)
   }

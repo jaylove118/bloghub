@@ -67,6 +67,7 @@ function normalizePost(p) {
     viewCount: p.view_count,
     commentCount: p.comment_count ?? 0,
     isPinned: Boolean(p.is_pinned),
+    isProfilePinned: Boolean(p.is_profile_pinned),
     status: p.status || 'published',
     scheduledAt: p.scheduled_at || null,
     likes: safeParseJSON(p.likes),
@@ -204,6 +205,11 @@ export const api = {
     async pin(postId) {
       const data = await request('/posts/' + postId + '/pin', { method: 'PUT' })
       return data.isPinned
+    },
+
+    async profilePin(postId) {
+      const data = await request('/posts/' + postId + '/profile-pin', { method: 'PUT' })
+      return data.isProfilePinned
     },
 
     async getTags() {

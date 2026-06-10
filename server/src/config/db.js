@@ -17,7 +17,12 @@ async function ensureTables() {
     try {
       await pool.query(`ALTER TABLE users ADD COLUMN role ENUM('user','admin') NOT NULL DEFAULT 'user' AFTER github`)
     } catch (_) {
-      // Column already exists (MySQL doesn't support IF NOT EXISTS for ADD COLUMN)
+      // Column already exists
+    }
+    try {
+      await pool.query(`ALTER TABLE posts ADD COLUMN is_profile_pinned TINYINT(1) NOT NULL DEFAULT 0 AFTER is_pinned`)
+    } catch (_) {
+      // Column already exists
     }
   } catch (err) {
     console.error('[DB] Failed to create tables:', err.message)
