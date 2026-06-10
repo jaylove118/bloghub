@@ -35,6 +35,7 @@ export default function BlogDetail() {
   const [commentLoading, setCommentLoading] = useState(false)
   const [error, setError] = useState(null)
   const [lightboxSrc, setLightboxSrc] = useState(null)
+  const [tocOpen, setTocOpen] = useState(false)
 
   const isAuthor = user?.id === post?.authorId
   const isAdmin = user?.role === 'admin'
@@ -297,9 +298,30 @@ export default function BlogDetail() {
               <CodeCopyButton />
             </div>
             {tocData?.toc && (
-              <aside className="hidden xl:block w-56 flex-shrink-0">
-                <div className="sticky top-24">{tocData.toc}</div>
-              </aside>
+              <>
+                <button
+                  onClick={() => setTocOpen(!tocOpen)}
+                  className="lg:hidden fixed right-4 bottom-20 z-30 w-11 h-11 rounded-full bg-white dark:bg-gray-800 shadow-lg border border-gray-200 dark:border-gray-700 flex items-center justify-center text-gray-600 dark:text-gray-300 hover:text-primary transition-colors"
+                  title="目录"
+                >
+                  <span className="text-lg font-bold">☰</span>
+                </button>
+                {tocOpen && (
+                  <div className="lg:hidden fixed inset-0 z-40 flex" onClick={() => setTocOpen(false)}>
+                    <div className="absolute inset-0 bg-black/30" />
+                    <div className="absolute right-0 top-0 bottom-0 w-64 bg-white dark:bg-gray-800 shadow-xl p-4 overflow-y-auto animate-slide-in-right" onClick={e => e.stopPropagation()}>
+                      <div className="flex items-center justify-between mb-3">
+                        <span className="font-semibold text-sm">目录</span>
+                        <button onClick={() => setTocOpen(false)} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded">✕</button>
+                      </div>
+                      {tocData.toc}
+                    </div>
+                  </div>
+                )}
+                <aside className="hidden lg:block w-56 flex-shrink-0">
+                  <div className="sticky top-24">{tocData.toc}</div>
+                </aside>
+              </>
             )}
           </div>
 
@@ -338,7 +360,7 @@ export default function BlogDetail() {
                     title={post.isPinned ? '取消精选' : '精选'}
                   >
                     <Pin size={16} fill={post.isPinned ? 'currentColor' : 'none'} />
-                    <span className="hidden sm:inline">{post.isPinned ? '已精选' : '精选'}</span>
+                    <span>{post.isPinned ? '已精选' : '精选'}</span>
                   </button>
                 )}
                 <Link
@@ -346,14 +368,14 @@ export default function BlogDetail() {
                   className="flex items-center gap-1 px-3 py-2 bg-gray-100 dark:bg-gray-700 dark:text-gray-300 rounded-full hover:bg-gray-200 dark:hover:bg-gray-600 transition text-sm"
                 >
                   <Edit size={16} />
-                  <span className="hidden sm:inline">编辑</span>
+                  <span>编辑</span>
                 </Link>
                 <button
                   onClick={handleDelete}
                   className="flex items-center gap-1 px-3 py-2 bg-red-50 dark:bg-red-900/30 text-red-500 rounded-full hover:bg-red-100 dark:hover:bg-red-900/50 transition text-sm"
                 >
                   <Trash2 size={16} />
-                  <span className="hidden sm:inline">删除</span>
+                  <span>删除</span>
                 </button>
               </div>
             )}
@@ -426,7 +448,7 @@ function CommentItem({ comment, replies, onDelete, onLike, currentUser, onReply 
   const isLiked = currentUser && comment.likes?.includes(currentUser.id)
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-xl p-4">
+    <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border-l-3 border-l-gray-100 dark:border-l-gray-700">
       <div className="flex gap-3">
         <img
           src={comment.avatar || 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + comment.userId}
@@ -472,7 +494,7 @@ function CommentItem({ comment, replies, onDelete, onLike, currentUser, onReply 
                 onChange={(e) => setReplyContent(e.target.value)}
                 placeholder="写下你的回复..."
                 rows={2}
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:border-primary text-sm resize-none"
+                className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:outline-none focus:border-primary text-sm resize-none"
               />
               <div className="flex justify-end mt-2">
                 <button

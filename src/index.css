@@ -20,6 +20,40 @@ body {
   color: #E2E8F0;
 }
 
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+.dark ::-webkit-scrollbar-thumb {
+  background: #475569;
+}
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #64748b;
+}
+
+/* Focus ring */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.4);
+  border-radius: 4px;
+}
+
+/* Prose */
 .prose {
   max-width: 65ch;
 }
@@ -147,3 +181,42 @@ body {
 .dark .shadow-sm { box-shadow: 0 1px 2px 0 rgba(0,0,0,0.3); }
 .dark input, .dark textarea, .dark select { background-color: #1E293B; color: #E2E8F0; border-color: #334155; }
 .dark input::placeholder, .dark textarea::placeholder { color: #64748B; }
+
+/* Card hover utility */
+.card-hover {
+  @apply transition-all duration-200;
+}
+.card-hover:hover {
+  @apply shadow-card-hover -translate-y-0.5;
+}
+.dark .card-hover:hover {
+  box-shadow: 0 10px 25px -5px rgba(0,0,0,0.3), 0 4px 10px -6px rgba(0,0,0,0.2);
+}
+
+/* Skeleton animation */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.skeleton {
+  background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+  border-radius: 8px;
+}
+.dark .skeleton {
+  background: linear-gradient(90deg, #1e293b 25%, #334155 50%, #1e293b 75%);
+  background-size: 200% 100%;
+}
+
+/* Nav active indicator */
+.nav-link {
+  @apply relative py-1;
+}
+.nav-link::after {
+  content: '';
+  @apply absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-full scale-x-0 transition-transform duration-200;
+}
+.nav-link.active::after {
+  @apply scale-x-100;
+}

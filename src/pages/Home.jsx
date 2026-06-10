@@ -4,7 +4,7 @@ import { api } from '../context/api'
 import { useAuth } from '../context/AuthContext'
 import { Heart, MessageCircle, Eye, Clock, TrendingUp, Sparkles, Pin, ChevronLeft, ChevronRight } from 'lucide-react'
 import { categoryMap, formatDate } from '../utils/constants'
-import LoadingSpinner from '../components/LoadingSpinner'
+import Skeleton from '../components/Skeleton'
 import CoverPlaceholder from '../components/CoverPlaceholder'
 import { useSEO } from '../hooks/useSEO'
 
@@ -59,7 +59,17 @@ export default function Home() {
   }
 
   if (loading) {
-    return <LoadingSpinner />
+    return (
+      <div className="max-w-7xl mx-auto px-4 py-8">
+        <div className="mb-8 h-24 skeleton rounded-2xl" />
+        <div className="h-8 w-48 skeleton mb-6" />
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <Skeleton key={i} variant="card" />
+          ))}
+        </div>
+      </div>
+    )
   }
 
   if (error) {
@@ -255,7 +265,7 @@ export default function Home() {
               <Link
                 key={post.id}
                 to={`/blog/${post.id}`}
-                className="group bg-white dark:bg-gray-800 rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300"
+                className="group bg-white dark:bg-gray-800 rounded-xl overflow-hidden shadow-sm card-hover"
               >
                 <div className="aspect-video overflow-hidden">
                   {post.coverImage ? (
@@ -323,21 +333,22 @@ export default function Home() {
       </section>
 
       <section className="grid md:grid-cols-3 gap-6">
-        <div className="p-6 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/30 dark:to-blue-800/20 rounded-xl">
-          <div className="text-3xl mb-3">✍️</div>
-          <h3 className="font-bold mb-2">创作自由</h3>
-          <p className="text-sm text-gray-600 dark:text-gray-400">支持 Markdown，随时随地记录灵感</p>
-        </div>
-        <div className="p-6 bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/30 dark:to-green-800/20 rounded-xl">
-          <div className="text-3xl mb-3">👥</div>
-          <h3 className="font-bold mb-2">社区互动</h3>
-          <p className="text-sm text-gray-600 dark:text-gray-400">点赞、评论、收藏，与读者互动</p>
-        </div>
-        <div className="p-6 bg-gradient-to-br from-amber-50 to-amber-100 dark:from-amber-900/30 dark:to-amber-800/20 rounded-xl">
-          <div className="text-3xl mb-3">🎨</div>
-          <h3 className="font-bold mb-2">精美主题</h3>
-          <p className="text-sm text-gray-600 dark:text-gray-400">响应式设计，适配所有设备</p>
-        </div>
+        {[
+          { emoji: '✍️', icon: '📝', title: '创作自由', desc: '支持 Markdown，随时随地记录灵感', accent: 'border-primary/40' },
+          { emoji: '💬', icon: '❤️', title: '社区互动', desc: '点赞、评论、收藏，与读者深度交流', accent: 'border-red-400/40' },
+          { emoji: '🎨', icon: '✨', title: '精美主题', desc: '响应式设计 + 暗色模式，适配所有设备', accent: 'border-amber-400/40' },
+        ].map(({ emoji, icon, title, desc, accent }) => (
+          <div key={title} className={`group p-6 bg-white dark:bg-gray-800 rounded-xl border-l-3 ${accent} shadow-sm card-hover`}>
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-10 h-10 rounded-lg bg-gray-100 dark:bg-gray-700 flex items-center justify-center text-xl group-hover:scale-110 transition-transform">
+                {emoji}
+              </div>
+              <div className="text-lg opacity-60">{icon}</div>
+            </div>
+            <h3 className="font-semibold mb-1.5">{title}</h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed">{desc}</p>
+          </div>
+        ))}
       </section>
     </div>
   )

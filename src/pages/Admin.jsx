@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link, Navigate } from 'react-router-dom'
-import { Eye, Users, FileText, MessageCircle, TrendingUp, Mail, Trash2, Pin, MessageSquare } from 'lucide-react'
+import { Eye, Users, FileText, MessageCircle, TrendingUp, Mail, Trash2, Pin, MessageSquare, ChevronLeft, ChevronRight } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { useSEO } from '../hooks/useSEO'
 import LoadingSpinner from '../components/LoadingSpinner'
@@ -349,23 +349,23 @@ export default function Admin() {
               </tbody>
             </table>
             {usersTotal > 20 && (
-              <div className="flex items-center justify-center gap-4 mt-4">
+              <div className="flex items-center justify-center gap-3 mt-4">
                 <button
                   onClick={() => setUsersPage(p => Math.max(1, p - 1))}
                   disabled={usersPage === 1}
-                  className="text-sm disabled:opacity-50 hover:text-primary"
+                  className="w-9 h-9 rounded-full bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 disabled:opacity-30 flex items-center justify-center transition"
                 >
-                  上一页
+                  <ChevronLeft size={16} />
                 </button>
-                <span className="text-sm text-gray-500">
+                <span className="text-sm text-gray-500 min-w-[4rem] text-center">
                   {usersPage} / {Math.ceil(usersTotal / 20)}
                 </span>
                 <button
                   onClick={() => setUsersPage(p => p + 1)}
                   disabled={usersPage >= Math.ceil(usersTotal / 20)}
-                  className="text-sm disabled:opacity-50 hover:text-primary"
+                  className="w-9 h-9 rounded-full bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 disabled:opacity-30 flex items-center justify-center transition"
                 >
-                  下一页
+                  <ChevronRight size={16} />
                 </button>
               </div>
             )}
@@ -435,23 +435,23 @@ export default function Admin() {
               </tbody>
             </table>
             {postsTotal > 20 && (
-              <div className="flex items-center justify-center gap-4 mt-4">
+              <div className="flex items-center justify-center gap-3 mt-4">
                 <button
                   onClick={() => setPostsPage(p => Math.max(1, p - 1))}
                   disabled={postsPage === 1}
-                  className="text-sm disabled:opacity-50 hover:text-primary"
+                  className="w-9 h-9 rounded-full bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 disabled:opacity-30 flex items-center justify-center transition"
                 >
-                  上一页
+                  <ChevronLeft size={16} />
                 </button>
-                <span className="text-sm text-gray-500">
+                <span className="text-sm text-gray-500 min-w-[4rem] text-center">
                   {postsPage} / {Math.ceil(postsTotal / 20)}
                 </span>
                 <button
                   onClick={() => setPostsPage(p => p + 1)}
                   disabled={postsPage >= Math.ceil(postsTotal / 20)}
-                  className="text-sm disabled:opacity-50 hover:text-primary"
+                  className="w-9 h-9 rounded-full bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 disabled:opacity-30 flex items-center justify-center transition"
                 >
-                  下一页
+                  <ChevronRight size={16} />
                 </button>
               </div>
             )}

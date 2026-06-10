@@ -3,7 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom'
 import { api } from '../context/api'
 import { Clock, Heart, MessageCircle, Search, X, ChevronLeft, ChevronRight, BookOpen, Pin } from 'lucide-react'
 import { categoryMap, formatDate, readingTime } from '../utils/constants'
-import LoadingSpinner from '../components/LoadingSpinner'
+import Skeleton from '../components/Skeleton'
 import CoverPlaceholder from '../components/CoverPlaceholder'
 import { useSEO } from '../hooks/useSEO'
 
@@ -166,14 +166,18 @@ export default function BlogList() {
       )}
 
       {error ? (
-        <div className="text-center py-16 bg-white dark:bg-gray-800 dark:bg-gray-800 rounded-2xl">
+        <div className="text-center py-16 bg-white dark:bg-gray-800 rounded-2xl">
           <p className="text-red-500 mb-4">{error}</p>
           <button onClick={() => window.location.reload()} className="text-primary hover:underline">重试</button>
         </div>
       ) : loading ? (
-        <LoadingSpinner className="h-64" />
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <Skeleton key={i} variant="card" />
+          ))}
+        </div>
       ) : posts.length === 0 ? (
-        <div className="text-center py-16 bg-white dark:bg-gray-800 dark:bg-gray-800 rounded-2xl">
+        <div className="text-center py-16 bg-white dark:bg-gray-800 rounded-2xl">
           <p className="text-gray-500 dark:text-gray-400 mb-4">没有找到相关文章</p>
           {hasFilters && (
             <button
@@ -192,7 +196,7 @@ export default function BlogList() {
               <Link
                 key={post.id}
                 to={`/blog/${post.id}`}
-                className="group bg-white dark:bg-gray-800 rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300"
+                className="group bg-white dark:bg-gray-800 rounded-xl overflow-hidden shadow-sm card-hover"
               >
                 <div className="aspect-video overflow-hidden">
                   {post.coverImage ? (

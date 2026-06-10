@@ -4,7 +4,7 @@ import { api } from '../context/api'
 import { useAuth } from '../context/AuthContext'
 import { Calendar, Link as LinkIcon, Heart, MessageCircle, Eye, Clock, Pin, Edit, Trash2 } from 'lucide-react'
 import { formatFullDate } from '../utils/constants'
-import LoadingSpinner from '../components/LoadingSpinner'
+import Skeleton from '../components/Skeleton'
 import { useSEO } from '../hooks/useSEO'
 
 export default function Profile() {
@@ -54,7 +54,27 @@ export default function Profile() {
   }, [id])
 
   if (loading) {
-    return <LoadingSpinner />
+    return (
+      <div className="max-w-4xl mx-auto px-4 py-8">
+        <div className="bg-white dark:bg-gray-800 rounded-2xl overflow-hidden">
+          <div className="h-32 skeleton !rounded-none" />
+          <div className="px-6 pb-6">
+            <div className="flex flex-col sm:flex-row items-center sm:items-end -mt-12 gap-4">
+              <div className="w-24 h-24 rounded-full skeleton" />
+              <div className="flex-1 mt-2 sm:mt-0 space-y-2">
+                <div className="h-7 w-40 skeleton" />
+                <div className="h-4 w-56 skeleton" />
+              </div>
+            </div>
+            <div className="h-4 w-3/4 skeleton mt-6" />
+            <div className="flex gap-6 mt-6 pt-6 border-t border-gray-100 dark:border-gray-700">
+              <div className="h-16 w-20 skeleton" />
+              <div className="h-16 w-20 skeleton" />
+            </div>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   if (!profile) {
@@ -114,14 +134,14 @@ export default function Profile() {
             )}
           </div>
 
-          <div className="flex gap-6 mt-6 pt-6 border-t border-gray-100 dark:border-gray-700">
-            <div className="text-center">
+          <div className="flex gap-4 mt-6 pt-6 border-t border-gray-100 dark:border-gray-700">
+            <div className="flex-1 bg-gray-50 dark:bg-gray-700/50 rounded-xl p-4 text-center">
               <div className="text-2xl font-bold text-primary">{posts.length}</div>
-              <div className="text-sm text-gray-500 dark:text-gray-400">文章</div>
+              <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">文章</div>
             </div>
-            <div className="text-center">
+            <div className="flex-1 bg-gray-50 dark:bg-gray-700/50 rounded-xl p-4 text-center">
               <div className="text-2xl font-bold text-red-500">{totalLikes}</div>
-              <div className="text-sm text-gray-500 dark:text-gray-400">获赞</div>
+              <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">获赞</div>
             </div>
           </div>
         </div>
@@ -138,7 +158,7 @@ export default function Profile() {
             {posts.map((post) => (
               <div
                 key={post.id}
-                className="bg-white dark:bg-gray-800 rounded-xl p-4 hover:shadow-md transition relative group"
+                className="bg-white dark:bg-gray-800 rounded-xl p-4 card-hover relative group"
               >
                 <div className="flex gap-4">
                   {post.coverImage && (
