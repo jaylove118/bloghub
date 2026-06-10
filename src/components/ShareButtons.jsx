@@ -1,9 +1,11 @@
-import { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
-import { Share2, Copy, Check, X, MessageCircle } from 'lucide-react'
+import { useState, useEffect, useRef } from 'react'
+import { createPortal } from 'react-dom'
+import { Share2, Copy, X, MessageCircle } from 'lucide-react'
 
 export function ShareButtons({ title, url }) {
   const [open, setOpen] = useState(false)
+  const btnRef = useRef(null)
+  const [pos, setPos] = useState({ top: 0, right: 0 })
   const shareUrl = url || window.location.href
   const shareTitle = title || document.title
 
@@ -56,40 +58,54 @@ export function ShareButtons({ title, url }) {
     },
   ]
 
+  const handleOpen = () => {
+    if (!open && btnRef.current) {
+      const rect = btnRef.current.getBoundingClientRect()
+      setPos({ top: rect.bottom + 4, right: window.innerWidth - rect.right })
+    }
+    setOpen(!open)
+  }
+
+  const dropdown = open && (
+    <>
+      <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
+      <div
+        className="fixed z-50 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 py-2 w-44"
+        style={{ top: pos.top, right: pos.right }}
+      >
+        <div className="flex items-center justify-between px-4 py-1 mb-1">
+          <span className="text-sm font-medium dark:text-gray-200">分享到</span>
+          <button onClick={() => setOpen(false)} className="text-gray-400 hover:text-gray-600">
+            <X size={14} />
+          </button>
+        </div>
+        {shareLinks.map((link) => (
+          <button
+            key={link.name}
+            onClick={() => { link.action(); setOpen(false) }}
+            className="w-full flex items-center gap-3 px-4 py-2 hover:bg-gray-50 dark:hover:bg-gray-700 transition text-sm dark:text-gray-200"
+          >
+            <span className={`w-8 h-8 flex items-center justify-center rounded-full text-white ${link.color}`}>
+              {link.icon}
+            </span>
+            {link.name}
+          </button>
+        ))}
+      </div>
+    </>
+  )
+
   return (
-    <div className="relative">
+    <div>
       <button
-        onClick={() => setOpen(!open)}
+        ref={btnRef}
+        onClick={handleOpen}
         className="flex items-center gap-1 px-3 py-2 rounded-full bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition text-sm"
       >
         <Share2 size={16} />
         <span className="hidden sm:inline">分享</span>
       </button>
-      {open && (
-        <>
-          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
-          <div className="absolute right-0 top-full mt-2 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 z-50 py-2 w-44">
-            <div className="flex items-center justify-between px-4 py-1 mb-1">
-              <span className="text-sm font-medium dark:text-gray-200">分享到</span>
-              <button onClick={() => setOpen(false)} className="text-gray-400 hover:text-gray-600">
-                <X size={14} />
-              </button>
-            </div>
-            {shareLinks.map((link) => (
-              <button
-                key={link.name}
-                onClick={() => { link.action(); setOpen(false) }}
-                className="w-full flex items-center gap-3 px-4 py-2 hover:bg-gray-50 dark:hover:bg-gray-700 transition text-sm dark:text-gray-200"
-              >
-                <span className={`w-8 h-8 flex items-center justify-center rounded-full text-white ${link.color}`}>
-                  {link.icon}
-                </span>
-                {link.name}
-              </button>
-            ))}
-          </div>
-        </>
-      )}
+      {createPortal(dropdown, document.body)}
     </div>
   )
 }
