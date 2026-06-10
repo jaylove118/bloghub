@@ -38,6 +38,7 @@ export function readingTime(content) {
 }
 
 export const POPULAR_TAGS = [
+  // 技术
   'React', 'Vue', 'Angular', 'Next.js', 'TypeScript', 'JavaScript',
   'Node.js', 'Python', 'Java', 'Go', 'Rust', 'C++', 'C#', 'PHP',
   'Docker', 'Kubernetes', 'AWS', 'Linux', 'Git', 'MySQL', 'Redis',
@@ -45,6 +46,16 @@ export const POPULAR_TAGS = [
   'Flutter', 'Swift', 'Kotlin', 'AI', 'Machine Learning', '前端', '后端',
   '全栈', '开源', '微服务', 'DevOps', 'Webpack', 'Vite', 'Spring',
   'Django', 'FastAPI', 'Laravel', 'Nginx',
+  // 生活
+  '旅行', '美食', '摄影', '健身', '读书', '电影', '音乐', '游戏',
+  '宠物', '家居', '烹饪', '咖啡', '穿搭', '情感', '育儿', '日常',
+  '购物', '数码', '手机', '汽车', '动漫', '运动', '户外', '露营',
+  '手账',
+  // 随笔
+  '随笔', '日记', '思考', '人生', '感悟', '成长', '职场', '学习',
+  '效率', '时间管理', '心理学', '教育', '设计', '艺术', '创作',
+  '写作', '阅读', '灵感', '回忆', '青春', '梦想', '故事', '散文',
+  '诗歌', '面试', '理财', '副业',
 ]
 
 export const TAG_WHITELIST = new Set(POPULAR_TAGS)
