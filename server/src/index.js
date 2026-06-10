@@ -7,7 +7,7 @@ import rateLimit from 'express-rate-limit'
 import helmet from 'helmet'
 import { fileURLToPath } from 'url'
 import { dirname, join } from 'path'
-import pool from './config/db.js'
+import pool, { ensureTables } from './config/db.js'
 import authRoutes from './routes/auth.js'
 import postRoutes from './routes/posts.js'
 import commentRoutes from './routes/comments.js'
@@ -183,6 +183,8 @@ app.use((err, _req, res, _next) => {
   res.status(status).json({ message })
 })
 
-app.listen(PORT, () => {
-  console.log('Server running on port ' + PORT)
+ensureTables().then(() => {
+  app.listen(PORT, () => {
+    console.log('Server running on port ' + PORT)
+  })
 })
