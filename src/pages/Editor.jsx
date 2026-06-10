@@ -61,30 +61,34 @@ export default function Editor() {
   const textareaRef = useRef(null)
   const formDataRef = useRef(formData)
   formDataRef.current = formData
-  const savedSelection = useRef([0, 0])
-
-  const trackSelection = () => {
-    const ta = textareaRef.current
-    if (ta && document.activeElement === ta) {
-      savedSelection.current = [ta.selectionStart, ta.selectionEnd]
-    }
-  }
+  const cursorRef = useRef(null)
 
   const insertMarkdown = (prefix, suffix = '') => {
     const ta = textareaRef.current
     if (!ta) return
     ta.focus()
-    const [start, end] = savedSelection.current
-    const content = formDataRef.current.content
+    const start = ta.selectionStart
+    const end = ta.selectionEnd
+    const content = ta.value
     const selected = content.substring(start, end)
     const newText = content.substring(0, start) + prefix + selected + suffix + content.substring(end)
+    cursorRef.current = selected
+      ? start + prefix.length + selected.length + suffix.length
+      : start + prefix.length
     handleChange({ content: newText })
-    setTimeout(() => {
-      ta.focus()
-      const pos = start + prefix.length + selected.length + suffix.length
-      ta.setSelectionRange(pos, pos)
-    }, 0)
   }
+
+  useEffect(() => {
+    if (cursorRef.current != null) {
+      const ta = textareaRef.current
+      if (ta) {
+        ta.focus()
+        const pos = cursorRef.current
+        ta.setSelectionRange(pos, pos)
+      }
+      cursorRef.current = null
+    }
+  }, [formData.content])
 
   const doSaveDraft = () => {
     const d = formDataRef.current
@@ -507,8 +511,6 @@ export default function Editor() {
                     ref={textareaRef}
                     value={formData.content}
                     onChange={(e) => handleChange({ content: e.target.value })}
-                    onMouseUp={trackSelection}
-                    onKeyUp={trackSelection}
                     placeholder="开始写作..."
                     maxLength={100000}
                     className={`${splitView ? 'w-full md:w-1/2 md:border-r border-b md:border-b-0 border-gray-200 dark:border-gray-600' : 'w-full'} h-96 p-4 focus:outline-none resize-none font-mono bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100`}
