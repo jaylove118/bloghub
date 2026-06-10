@@ -52,8 +52,8 @@ router.get('/', async (req, res, next) => {
       params.push(Number(authorId))
     }
     if (search) {
-      where += ' AND MATCH(p.title, p.content) AGAINST(? IN BOOLEAN MODE)'
-      params.push(search + '*')
+      where += ' AND (p.title LIKE ? OR p.content LIKE ?)'
+      params.push('%' + search + '%', '%' + search + '%')
     }
     if (tag) {
       where += ' AND JSON_CONTAINS(p.tags, ?)'
