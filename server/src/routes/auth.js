@@ -51,13 +51,16 @@ router.post('/register', registerValidation, async (req, res, next) => {
   try {
     const { username, email, password, avatar, verifyCode } = req.body
 
-    // Verify code
-    if (!verifyCode) throw new AppError(400, '请输入邮箱验证码')
-    const [codes] = await pool.query(
-      'SELECT id FROM email_verifications WHERE email = ? AND code = ? AND expires_at > NOW()',
-      [email, verifyCode]
-    )
-    if (codes.length === 0) throw new AppError(400, '验证码错误或已过期')
+    const skipVerify = process.env.SKIP_EMAIL_VERIFY === 'true'
+
+    if (!skipVerify) {
+      if (!verifyCode) throw new AppError(400, '请输入邮箱验证码')
+      const [codes] = await pool.query(
+        'SELECT id FROM email_verifications WHERE email = ? AND code = ? AND expires_at > NOW()',
+        [email, verifyCode]
+      )
+      if (codes.length === 0) throw new AppError(400, '验证码错误或已过期')
+    }
 
     const [existing] = await pool.query('SELECT id FROM users WHERE email = ?', [email])
     if (existing.length > 0) {
@@ -67,11 +70,12 @@ router.post('/register', registerValidation, async (req, res, next) => {
     const hashedPassword = await bcrypt.hash(password, 10)
     const [result] = await pool.query(
       'INSERT INTO users (username, email, password, avatar, email_verified) VALUES (?, ?, ?, ?, ?)',
-      [username, email, hashedPassword, avatar || '', 1]
+      [username, email, hashedPassword, avatar || '', skipVerify ? 1 : 0]
     )
 
-    // Delete used verification code
-    await pool.query('DELETE FROM email_verifications WHERE email = ?', [email])
+    if (!skipVerify) {
+      await pool.query('DELETE FROM email_verifications WHERE email = ?', [email])
+    }
 
     const userId = result.insertId
     const token = jwt.sign({ userId }, process.env.JWT_SECRET, { expiresIn: '7d' })
