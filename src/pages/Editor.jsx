@@ -61,8 +61,6 @@ export default function Editor() {
   const textareaRef = useRef(null)
   const formDataRef = useRef(formData)
   formDataRef.current = formData
-  const cursorRef = useRef(null)
-
   const insertMarkdown = (prefix, suffix = '') => {
     const ta = textareaRef.current
     if (!ta) return
@@ -72,23 +70,15 @@ export default function Editor() {
     const content = ta.value
     const selected = content.substring(start, end)
     const newText = content.substring(0, start) + prefix + selected + suffix + content.substring(end)
-    cursorRef.current = selected
-      ? start + prefix.length + selected.length + suffix.length
-      : start + prefix.length
     handleChange({ content: newText })
+    requestAnimationFrame(() => {
+      ta.focus()
+      const pos = selected
+        ? start + prefix.length + selected.length + suffix.length
+        : start + prefix.length
+      ta.setSelectionRange(pos, pos)
+    })
   }
-
-  useEffect(() => {
-    if (cursorRef.current != null) {
-      const ta = textareaRef.current
-      if (ta) {
-        ta.focus()
-        const pos = cursorRef.current
-        ta.setSelectionRange(pos, pos)
-      }
-      cursorRef.current = null
-    }
-  }, [formData.content])
 
   const doSaveDraft = () => {
     const d = formDataRef.current
