@@ -4,7 +4,7 @@ import { api, TOKEN_KEY } from '../context/api'
 import { useAuth } from '../context/AuthContext'
 import { ArrowLeft, Eye, Image, X, RotateCcw, Check, FileText, Send, Bold, Italic, Code, Quote, List, Heading, Columns } from 'lucide-react'
 import { parseMarkdown } from '../lib/index'
-import { categoryOptions, POPULAR_TAGS } from '../utils/constants'
+import { categoryOptions, POPULAR_TAGS, TAG_CATEGORY_MAP } from '../utils/constants'
 import { handleError } from '../utils/errors'
 import DOMPurify from 'dompurify'
 
@@ -531,10 +531,15 @@ export default function Editor() {
                   添加
                 </button>
               </div>
-              {formData.tags.length < 5 && (
+              {formData.tags.length < 5 && (() => {
+                const allTags = POPULAR_TAGS.filter(t => !formData.tags.includes(t))
+                const catTags = (TAG_CATEGORY_MAP[formData.category] || []).filter(t => !formData.tags.includes(t))
+                const otherTags = allTags.filter(t => !catTags.includes(t))
+                const suggested = [...catTags, ...otherTags].slice(0, 30)
+                return (
                 <div className="mt-2 flex flex-wrap gap-1.5">
                   <span className="text-xs text-gray-400 dark:text-gray-500 mr-1 self-center">常用:</span>
-                  {POPULAR_TAGS.filter(t => !formData.tags.includes(t)).slice(0, 30).map(tag => (
+                  {suggested.map(tag => (
                     <button
                       key={tag}
                       type="button"
@@ -545,7 +550,7 @@ export default function Editor() {
                     </button>
                   ))}
                 </div>
-              )}
+                )})()}
             </div>
 
             <div>
