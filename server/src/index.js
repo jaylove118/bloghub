@@ -197,6 +197,40 @@ app.get('/api/admin/posts', authRequired, adminRequired, async (req, res, next) 
   }
 })
 
+app.get('/api/admin/users', authRequired, adminRequired, async (req, res, next) => {
+  try {
+    const pageNum = Math.max(1, parseInt(req.query.page) || 1)
+    const limitNum = Math.min(50, Math.max(1, parseInt(req.query.limit) || 20))
+    const offset = (pageNum - 1) * limitNum
+
+    const [[{ total }]] = await pool.query('SELECT COUNT(*) AS total FROM users')
+    const [rows] = await pool.query(
+      'SELECT id, username, email, avatar, role, created_at FROM users ORDER BY created_at DESC LIMIT ? OFFSET ?',
+      [limitNum, offset]
+    )
+
+    res.json({ users: rows, pagination: { page: pageNum, limit: limitNum, total } })
+  } catch (err) {
+    next(err)
+  }
+})
+
+app.delete('/api/admin/users/:id', authRequired, adminRequired, async (req, res, next) => {
+  try {
+    const [users] = await pool.query('SELECT role FROM users WHERE id = ?', [req.params.id])
+    if (users.length === 0) {
+      return res.status(404).json({ message: '用户不存在' })
+    }
+    if (users[0].role === 'admin') {
+      return res.status(403).json({ message: '不能删除管理员账户' })
+    }
+    await pool.query('DELETE FROM users WHERE id = ?', [req.params.id])
+    res.json({ success: true })
+  } catch (err) {
+    next(err)
+  }
+})
+
 if (process.env.NODE_ENV === 'production') {
   const distPath = join(__dirname, '..', '..', 'dist')
   app.use(express.static(distPath))

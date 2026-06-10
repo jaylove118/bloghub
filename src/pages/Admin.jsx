@@ -37,6 +37,10 @@ export default function Admin() {
   const [postsLoading, setPostsLoading] = useState(false)
   const [postsPage, setPostsPage] = useState(1)
   const [postsTotal, setPostsTotal] = useState(0)
+  const [adminUsers, setAdminUsers] = useState([])
+  const [usersLoading, setUsersLoading] = useState(false)
+  const [usersPage, setUsersPage] = useState(1)
+  const [usersTotal, setUsersTotal] = useState(0)
 
   useEffect(() => {
     (async () => {
@@ -67,6 +71,19 @@ export default function Admin() {
     fetchPosts()
   }, [postsPage])
 
+  useEffect(() => {
+    const fetchUsers = async () => {
+      setUsersLoading(true)
+      try {
+        const result = await api.admin.getUsers({ page: usersPage, limit: 20 })
+        setAdminUsers(result.users)
+        setUsersTotal(result.pagination.total)
+      } catch {}
+      setUsersLoading(false)
+    }
+    fetchUsers()
+  }, [usersPage])
+
   const handleDeleteSubscriber = async (email) => {
     if (!window.confirm('确定删除这个订阅者？')) return
     try {
@@ -84,6 +101,15 @@ export default function Admin() {
       await api.posts.delete(postId)
       setAdminPosts(prev => prev.filter(p => p.id !== postId))
       setPostsTotal(prev => prev - 1)
+    } catch {}
+  }
+
+  const handleAdminDeleteUser = async (userId) => {
+    if (!window.confirm('确定要删除这个用户吗？其所有文章和评论也将被删除。')) return
+    try {
+      await api.admin.deleteUser(userId)
+      setAdminUsers(prev => prev.filter(u => u.id !== userId))
+      setUsersTotal(prev => prev - 1)
     } catch {}
   }
 
@@ -212,6 +238,88 @@ export default function Admin() {
                 </div>
               </div>
             ))}
+          </div>
+        )}
+      </div>
+
+      <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700 mb-6">
+        <div className="flex items-center gap-2 mb-4">
+          <Users size={18} className="text-primary" />
+          <h2 className="font-bold dark:text-gray-200">用户管理 ({usersTotal})</h2>
+        </div>
+        {usersLoading ? (
+          <LoadingSpinner />
+        ) : adminUsers.length === 0 ? (
+          <p className="text-gray-500 text-sm">暂无用户</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b dark:border-gray-700">
+                  <th className="text-left py-2 px-2">用户名</th>
+                  <th className="text-left py-2 px-2">邮箱</th>
+                  <th className="text-left py-2 px-2">角色</th>
+                  <th className="text-left py-2 px-2">注册日期</th>
+                  <th className="text-right py-2 px-2">操作</th>
+                </tr>
+              </thead>
+              <tbody>
+                {adminUsers.map(u => (
+                  <tr key={u.id} className="border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                    <td className="py-2 px-2">
+                      <div className="flex items-center gap-2">
+                        <div className="w-7 h-7 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white text-xs font-bold">
+                          {u.username?.charAt(0)?.toUpperCase()}
+                        </div>
+                        <span className="dark:text-gray-200">{u.username}</span>
+                      </div>
+                    </td>
+                    <td className="py-2 px-2 text-gray-500 text-xs">{u.email}</td>
+                    <td className="py-2 px-2">
+                      <span className={`px-2 py-0.5 text-xs rounded-full ${
+                        u.role === 'admin' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300' : 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400'
+                      }`}>
+                        {u.role === 'admin' ? '管理员' : '用户'}
+                      </span>
+                    </td>
+                    <td className="py-2 px-2 text-gray-500 text-xs">
+                      {new Date(u.created_at).toLocaleDateString('zh-CN')}
+                    </td>
+                    <td className="py-2 px-2 text-right">
+                      <button
+                        onClick={() => handleAdminDeleteUser(u.id)}
+                        disabled={u.role === 'admin'}
+                        className={`transition p-1 ${u.role === 'admin' ? 'text-gray-300 dark:text-gray-600 cursor-not-allowed' : 'text-gray-400 hover:text-red-500'}`}
+                        title={u.role === 'admin' ? '不能删除管理员' : '删除用户'}
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {usersTotal > 20 && (
+              <div className="flex items-center justify-center gap-4 mt-4">
+                <button
+                  onClick={() => setUsersPage(p => Math.max(1, p - 1))}
+                  disabled={usersPage === 1}
+                  className="text-sm disabled:opacity-50 hover:text-primary"
+                >
+                  上一页
+                </button>
+                <span className="text-sm text-gray-500">
+                  {usersPage} / {Math.ceil(usersTotal / 20)}
+                </span>
+                <button
+                  onClick={() => setUsersPage(p => p + 1)}
+                  disabled={usersPage >= Math.ceil(usersTotal / 20)}
+                  className="text-sm disabled:opacity-50 hover:text-primary"
+                >
+                  下一页
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>

@@ -233,6 +233,20 @@ export const api = {
     },
   },
 
+  admin: {
+    async getUsers(filters = {}) {
+      const params = new URLSearchParams()
+      if (filters.page) params.set('page', filters.page)
+      if (filters.limit) params.set('limit', filters.limit)
+      const qs = params.toString()
+      return await request('/admin/users' + (qs ? '?' + qs : ''))
+    },
+
+    async deleteUser(userId) {
+      await request('/admin/users/' + userId, { method: 'DELETE' })
+    },
+  },
+
   comments: {
     async getByPostId(postId) {
       const data = await request('/comments/post/' + postId)
