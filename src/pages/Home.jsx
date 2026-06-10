@@ -117,28 +117,12 @@ export default function Home() {
         if (!post) return null
         return (
         <section className="mb-12">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <Sparkles className="text-amber-500" size={20} />
-              <h2 className="text-xl font-bold">精选文章</h2>
-              <span className="text-sm text-gray-500 dark:text-gray-400">
-                {featuredIndex + 1} / {featuredPosts.length}
-              </span>
-            </div>
-            <div className="flex items-center gap-1">
-              <button
-                onClick={() => setFeaturedIndex(i => i > 0 ? i - 1 : featuredPosts.length - 1)}
-                className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition text-gray-500 dark:text-gray-400"
-              >
-                <ChevronLeft size={20} />
-              </button>
-              <button
-                onClick={() => setFeaturedIndex(i => i < featuredPosts.length - 1 ? i + 1 : 0)}
-                className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition text-gray-500 dark:text-gray-400"
-              >
-                <ChevronRight size={20} />
-              </button>
-            </div>
+          <div className="flex items-center gap-2 mb-4">
+            <Sparkles className="text-amber-500" size={20} />
+            <h2 className="text-xl font-bold">精选文章</h2>
+            <span className="text-sm text-gray-500 dark:text-gray-400">
+              {featuredIndex + 1} / {featuredPosts.length}
+            </span>
           </div>
 
           <div className="relative bg-white dark:bg-gray-800 rounded-2xl overflow-hidden shadow-sm">
@@ -192,19 +176,33 @@ export default function Home() {
             </Link>
 
             {featuredPosts.length > 1 && (
-              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
-                {featuredPosts.map((_, i) => (
-                  <button
-                    key={i}
-                    onClick={() => setFeaturedIndex(i)}
-                    className={`w-2 h-2 rounded-full transition-all ${
-                      i === featuredIndex
-                        ? 'bg-primary w-6'
-                        : 'bg-gray-300 dark:bg-gray-600 hover:bg-gray-400'
-                    }`}
-                  />
-                ))}
-              </div>
+              <>
+                <button
+                  onClick={() => setFeaturedIndex(i => i > 0 ? i - 1 : featuredPosts.length - 1)}
+                  className="absolute left-4 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-white/80 dark:bg-gray-800/80 backdrop-blur shadow-md hover:bg-white dark:hover:bg-gray-700 hover:shadow-lg flex items-center justify-center text-gray-700 dark:text-gray-300 transition-all"
+                >
+                  <ChevronLeft size={24} />
+                </button>
+                <button
+                  onClick={() => setFeaturedIndex(i => i < featuredPosts.length - 1 ? i + 1 : 0)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-white/80 dark:bg-gray-800/80 backdrop-blur shadow-md hover:bg-white dark:hover:bg-gray-700 hover:shadow-lg flex items-center justify-center text-gray-700 dark:text-gray-300 transition-all"
+                >
+                  <ChevronRight size={24} />
+                </button>
+                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
+                  {featuredPosts.map((_, i) => (
+                    <button
+                      key={i}
+                      onClick={() => setFeaturedIndex(i)}
+                      className={`w-2.5 h-2.5 rounded-full transition-all ${
+                        i === featuredIndex
+                          ? 'bg-primary w-7'
+                          : 'bg-gray-300/80 dark:bg-gray-600/80 hover:bg-gray-400'
+                      }`}
+                    />
+                  ))}
+                </div>
+              </>
             )}
           </div>
         </section>
