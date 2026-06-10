@@ -154,7 +154,7 @@ export const api = {
     async getAll(filters = {}) {
       const params = new URLSearchParams()
       if (filters.category) params.set('category', filters.category)
-      if (filters.tags) params.set('tags', filters.tags)
+      if (filters.tags) params.set('tag', filters.tags)
       if (filters.search) params.set('search', filters.search)
       if (filters.authorId) params.set('authorId', filters.authorId)
       if (filters.featured) params.set('featured', 'true')

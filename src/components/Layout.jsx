@@ -73,6 +73,12 @@ export default function Layout() {
               <FileText size={18} />
               博客
             </Link>
+            {isAuthenticated && (
+              <Link to={`/profile/${user?.id}`} className="flex items-center gap-1 hover:text-primary transition">
+                <User size={18} />
+                我的主页
+              </Link>
+            )}
             <Link to="/about" className="hover:text-primary transition">关于</Link>
             <button
               onClick={toggleTheme}
@@ -126,7 +132,7 @@ export default function Layout() {
                         className="flex items-center gap-2 px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition"
                       >
                         <User size={16} />
-                        个人资料
+                        我的主页
                       </Link>
                       <Link
                         to="/settings"

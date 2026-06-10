@@ -89,6 +89,22 @@ router.get('/', async (req, res, next) => {
   }
 })
 
+router.get('/tags/all', async (_req, res) => {
+  try {
+    const [rows] = await pool.query("SELECT tags FROM posts WHERE status = 'published'")
+    const counts = {}
+    rows.forEach(r => {
+      let tags = r.tags
+      if (typeof tags === 'string') { try { tags = JSON.parse(tags) } catch { tags = [] } }
+      (tags || []).forEach(t => { counts[t] = (counts[t] || 0) + 1 })
+    })
+    const sorted = Object.entries(counts).map(([tag, count]) => ({ tag, count })).sort((a, b) => b.count - a.count)
+    res.json({ tags: sorted })
+  } catch {
+    res.json({ tags: [] })
+  }
+})
+
 router.get('/:idOrSlug', async (req, res, next) => {
   try {
     const { idOrSlug } = req.params
@@ -323,22 +339,6 @@ router.post('/:id/favorite', authRequired, async (req, res, next) => {
     next(err)
   } finally {
     conn.release()
-  }
-})
-
-router.get('/tags/all', async (_req, res) => {
-  try {
-    const [rows] = await pool.query("SELECT tags FROM posts WHERE status = 'published'")
-    const counts = {}
-    rows.forEach(r => {
-      let tags = r.tags
-      if (typeof tags === 'string') { try { tags = JSON.parse(tags) } catch { tags = [] } }
-      (tags || []).forEach(t => { counts[t] = (counts[t] || 0) + 1 })
-    })
-    const sorted = Object.entries(counts).map(([tag, count]) => ({ tag, count })).sort((a, b) => b.count - a.count)
-    res.json({ tags: sorted })
-  } catch {
-    res.json({ tags: [] })
   }
 })
 
