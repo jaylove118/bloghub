@@ -13,11 +13,7 @@ router.post('/subscribe', validate({ email: { required: true, max: 100 } }), asy
       'INSERT INTO subscribers (email, is_verified) VALUES (?, 1) ON DUPLICATE KEY UPDATE is_verified = 1',
       [email]
     )
-    try {
-      await sendSubscribeConfirmation(email, null)
-    } catch {
-      // Email send failed, but subscription is active
-    }
+    sendSubscribeConfirmation(email).catch(() => {})
     res.json({ message: '订阅成功！新文章发布时会通知你' })
   } catch (err) {
     next(err)
