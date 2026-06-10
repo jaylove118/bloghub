@@ -485,13 +485,13 @@ export default function Editor() {
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 dark:text-gray-300 mb-2">内容（支持 Markdown）</label>
               <div className="border border-gray-200 dark:border-gray-600 rounded-xl overflow-hidden">
                 <div className="bg-gray-50 dark:bg-gray-800 px-2 py-1.5 border-b border-gray-200 dark:border-gray-600 flex items-center gap-1 flex-wrap">
-                  <button type="button" onClick={() => insertMarkdown('# ', '')} className="p-1.5 hover:bg-gray-200 dark:hover:bg-gray-700 rounded" title="标题"><Heading size={16} /></button>
-                  <button type="button" onClick={() => insertMarkdown('**', '**')} className="p-1.5 hover:bg-gray-200 dark:hover:bg-gray-700 rounded font-bold" title="粗体"><Bold size={16} /></button>
-                  <button type="button" onClick={() => insertMarkdown('*', '*')} className="p-1.5 hover:bg-gray-200 dark:hover:bg-gray-700 rounded italic" title="斜体"><Italic size={16} /></button>
-                  <button type="button" onClick={() => insertMarkdown('`', '`')} className="p-1.5 hover:bg-gray-200 dark:hover:bg-gray-700 rounded" title="行内代码"><Code size={16} /></button>
-                  <button type="button" onClick={() => insertMarkdown('> ', '')} className="p-1.5 hover:bg-gray-200 dark:hover:bg-gray-700 rounded" title="引用"><Quote size={16} /></button>
-                  <button type="button" onClick={() => insertMarkdown('- ', '')} className="p-1.5 hover:bg-gray-200 dark:hover:bg-gray-700 rounded" title="列表"><List size={16} /></button>
-                  <button type="button" onClick={() => insertMarkdown('[', '](url)')} className="p-1.5 hover:bg-gray-200 dark:hover:bg-gray-700 rounded" title="链接"><span className="text-xs font-mono">A</span></button>
+                  <button type="button" onMouseDown={(e) => { e.preventDefault(); insertMarkdown('# ', '') }} className="p-1.5 hover:bg-gray-200 dark:hover:bg-gray-700 rounded select-none" title="标题"><Heading size={16} /></button>
+                  <button type="button" onMouseDown={(e) => { e.preventDefault(); insertMarkdown('**', '**') }} className="p-1.5 hover:bg-gray-200 dark:hover:bg-gray-700 rounded font-bold select-none" title="粗体"><Bold size={16} /></button>
+                  <button type="button" onMouseDown={(e) => { e.preventDefault(); insertMarkdown('*', '*') }} className="p-1.5 hover:bg-gray-200 dark:hover:bg-gray-700 rounded italic select-none" title="斜体"><Italic size={16} /></button>
+                  <button type="button" onMouseDown={(e) => { e.preventDefault(); insertMarkdown('`', '`') }} className="p-1.5 hover:bg-gray-200 dark:hover:bg-gray-700 rounded select-none" title="行内代码"><Code size={16} /></button>
+                  <button type="button" onMouseDown={(e) => { e.preventDefault(); insertMarkdown('> ', '') }} className="p-1.5 hover:bg-gray-200 dark:hover:bg-gray-700 rounded select-none" title="引用"><Quote size={16} /></button>
+                  <button type="button" onMouseDown={(e) => { e.preventDefault(); insertMarkdown('- ', '') }} className="p-1.5 hover:bg-gray-200 dark:hover:bg-gray-700 rounded select-none" title="列表"><List size={16} /></button>
+                  <button type="button" onMouseDown={(e) => { e.preventDefault(); insertMarkdown('[', '](url)') }} className="p-1.5 hover:bg-gray-200 dark:hover:bg-gray-700 rounded select-none" title="链接"><span className="text-xs font-mono">A</span></button>
                   <span className="text-xs text-gray-400 dark:text-gray-500 dark:text-gray-500 ml-2">点击按钮插入格式，支持选中文本</span>
                 </div>
                 <div className={`${splitView ? 'flex flex-col md:flex-row' : ''}`}>
