@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { api } from '../context/api'
 import { useAuth } from '../context/AuthContext'
-import { Heart, MessageCircle, Eye, Clock, TrendingUp, Sparkles, Pin } from 'lucide-react'
+import { Heart, MessageCircle, Eye, Clock, TrendingUp, Sparkles, Pin, ChevronLeft, ChevronRight } from 'lucide-react'
 import { categoryMap, formatDate } from '../utils/constants'
 import LoadingSpinner from '../components/LoadingSpinner'
 import CoverPlaceholder from '../components/CoverPlaceholder'
@@ -12,7 +12,8 @@ import { useSEO } from '../hooks/useSEO'
 export default function Home() {
   const { isAuthenticated, isAdmin } = useAuth()
   const [posts, setPosts] = useState([])
-  const [featuredPost, setFeaturedPost] = useState(null)
+  const [featuredPosts, setFeaturedPosts] = useState([])
+  const [featuredIndex, setFeaturedIndex] = useState(0)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [tab, setTab] = useState('latest')
@@ -29,8 +30,9 @@ export default function Home() {
         const { posts: data } = await api.posts.getAll(opts)
         setPosts(data)
         if (tab === 'latest' && data.length > 0) {
-          const pinned = data.find(p => p.isPinned)
-          setFeaturedPost(pinned || null)
+          const pinned = data.filter(p => p.isPinned)
+          setFeaturedPosts(pinned)
+          setFeaturedIndex(0)
         }
       } catch (err) {
         setError('加载失败，请稍后重试')
@@ -47,7 +49,13 @@ export default function Home() {
     try {
       const newPinned = await api.posts.pin(postId)
       setPosts(prev => prev.map(p => p.id === postId ? { ...p, isPinned: newPinned } : p))
-      setFeaturedPost(prev => prev?.id === postId ? { ...prev, isPinned: newPinned } : prev)
+      setFeaturedPosts(prev => {
+        if (newPinned) {
+          const post = posts.find(p => p.id === postId)
+          return post ? [...prev, { ...post, isPinned: true }] : prev
+        }
+        return prev.filter(p => p.id !== postId)
+      })
     } catch {}
   }
 
@@ -104,66 +112,104 @@ export default function Home() {
         </div>
       )}
 
-      {tab === 'latest' && featuredPost && (
+      {tab === 'latest' && featuredPosts.length > 0 && (() => {
+        const post = featuredPosts[featuredIndex]
+        if (!post) return null
+        return (
         <section className="mb-12">
-          <div className="flex items-center gap-2 mb-4">
-            <Sparkles className="text-amber-500" size={20} />
-            <h2 className="text-xl font-bold">精选文章</h2>
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <Sparkles className="text-amber-500" size={20} />
+              <h2 className="text-xl font-bold">精选文章</h2>
+              <span className="text-sm text-gray-500 dark:text-gray-400">
+                {featuredIndex + 1} / {featuredPosts.length}
+              </span>
+            </div>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => setFeaturedIndex(i => i > 0 ? i - 1 : featuredPosts.length - 1)}
+                className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition text-gray-500 dark:text-gray-400"
+              >
+                <ChevronLeft size={20} />
+              </button>
+              <button
+                onClick={() => setFeaturedIndex(i => i < featuredPosts.length - 1 ? i + 1 : 0)}
+                className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition text-gray-500 dark:text-gray-400"
+              >
+                <ChevronRight size={20} />
+              </button>
+            </div>
           </div>
-          <Link
-            to={`/blog/${featuredPost.id}`}
-            className="block group bg-white dark:bg-gray-800 rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300"
-          >
-            <div className="md:flex">
+
+          <div className="relative bg-white dark:bg-gray-800 rounded-2xl overflow-hidden shadow-sm">
+            <Link
+              to={`/blog/${post.id}`}
+              className="block group md:flex"
+            >
               <div className="md:w-2/3">
-                <div className="aspect-video md:aspect-auto md:h-full">
-                  {featuredPost.coverImage ? (
+                <div className="aspect-video md:aspect-auto md:h-72">
+                  {post.coverImage ? (
                     <img
-                      src={featuredPost.coverImage}
-                      alt={featuredPost.title}
+                      src={post.coverImage}
+                      alt={post.title}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                     />
                   ) : (
-                    <CoverPlaceholder title={featuredPost.title} className="w-full h-full" />
+                    <CoverPlaceholder title={post.title} className="w-full h-full" />
                   )}
                 </div>
               </div>
               <div className="md:w-1/3 p-6 flex flex-col justify-center">
                 <div className="flex items-center gap-2 mb-3">
-                  <span className={`px-3 py-1 rounded-full text-sm ${categoryMap[featuredPost.category]?.color || 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'}`}>
-                    {categoryMap[featuredPost.category]?.icon} {categoryMap[featuredPost.category]?.name}
+                  <span className={`px-3 py-1 rounded-full text-sm ${categoryMap[post.category]?.color || 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'}`}>
+                    {categoryMap[post.category]?.icon} {categoryMap[post.category]?.name}
                   </span>
-                  {featuredPost.isPinned && (
-                    <span className="px-2 py-1 rounded-full text-xs bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300 flex items-center gap-0.5">
-                      <Pin size={12} /> 精选
-                    </span>
-                  )}
+                  <span className="px-2 py-1 rounded-full text-xs bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300 flex items-center gap-0.5">
+                    <Pin size={12} /> 精选
+                  </span>
                   <span className="text-sm text-gray-500 dark:text-gray-400 flex items-center gap-1">
                     <Eye size={14} />
-                    {featuredPost.viewCount || 0}
+                    {post.viewCount || 0}
                   </span>
                 </div>
                 <h3 className="text-2xl font-bold mb-3 group-hover:text-primary transition">
-                  {featuredPost.title}
+                  {post.title}
                 </h3>
                 <p className="text-gray-600 dark:text-gray-400 mb-4 line-clamp-3">
-                  {featuredPost.excerpt || featuredPost.content.replace(/[#*`]/g, '').slice(0, 150)}
+                  {post.excerpt || post.content.replace(/[#*`]/g, '').slice(0, 150)}
                 </p>
                 <div className="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400">
                   <span className="flex items-center gap-1">
                     <Clock size={14} />
-                    {formatDate(featuredPost.createdAt)}
+                    {formatDate(post.createdAt)}
                   </span>
                   <span className="flex items-center gap-1">
                     <Heart size={14} className="text-red-500" />
-                    {featuredPost.likes?.length || 0}
+                    {post.likes?.length || 0}
                   </span>
                 </div>
               </div>
-            </div>
-          </Link>
+            </Link>
+
+            {featuredPosts.length > 1 && (
+              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
+                {featuredPosts.map((_, i) => (
+                  <button
+                    key={i}
+                    onClick={() => setFeaturedIndex(i)}
+                    className={`w-2 h-2 rounded-full transition-all ${
+                      i === featuredIndex
+                        ? 'bg-primary w-6'
+                        : 'bg-gray-300 dark:bg-gray-600 hover:bg-gray-400'
+                    }`}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
         </section>
-      )}
+        )
+      })()}
 
       <section className="mb-12">
         <div className="flex items-center justify-between mb-6">
