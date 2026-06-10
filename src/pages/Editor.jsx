@@ -336,6 +336,7 @@ export default function Editor() {
               </button>
             </div>
             <button
+              type="button"
               onClick={(e) => handleSubmit(e, 'draft')}
               disabled={loading}
               className="px-4 py-2 text-sm text-gray-600 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition disabled:opacity-50 flex items-center gap-1.5"
@@ -343,6 +344,7 @@ export default function Editor() {
               <FileText size={16} />存草稿
             </button>
             <button
+              type="button"
               onClick={(e) => handleSubmit(e, 'published')}
               disabled={loading}
               className="px-5 py-2 bg-primary text-white text-sm rounded-lg hover:bg-secondary transition disabled:opacity-50 flex items-center gap-1.5 font-medium shadow-sm"
@@ -412,7 +414,7 @@ export default function Editor() {
             )}
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={(e) => e.preventDefault()} className="space-y-6">
             {/* Title */}
             <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-6">
               <input
