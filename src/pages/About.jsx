@@ -14,7 +14,12 @@ const FEEDBACK_TYPES = [
 
 export default function About() {
   const { isAuthenticated, user } = useAuth()
-  const [form, setForm] = useState({ name: '', email: '', type: 'suggestion', content: '' })
+  const [form, setForm] = useState({
+    name: isAuthenticated ? (user?.username || '') : '',
+    email: isAuthenticated ? (user?.email || '') : '',
+    type: 'suggestion',
+    content: ''
+  })
   const [sending, setSending] = useState(false)
   const [sent, setSent] = useState(false)
   const [error, setError] = useState('')
@@ -99,30 +104,28 @@ export default function About() {
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
-            {!isAuthenticated && (
-              <div className="grid sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium mb-1 text-gray-600 dark:text-gray-400">昵称</label>
-                  <input
-                    type="text"
-                    value={form.name}
-                    onChange={(e) => setForm({ ...form, name: e.target.value })}
-                    placeholder="你的昵称"
-                    className="w-full px-4 py-2.5 border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-xl focus:outline-none focus:border-primary"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1 text-gray-600 dark:text-gray-400">邮箱</label>
-                  <input
-                    type="email"
-                    value={form.email}
-                    onChange={(e) => setForm({ ...form, email: e.target.value })}
-                    placeholder="你的邮箱（可选）"
-                    className="w-full px-4 py-2.5 border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-xl focus:outline-none focus:border-primary"
-                  />
-                </div>
+            <div className="grid sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium mb-1 text-gray-600 dark:text-gray-400">昵称</label>
+                <input
+                  type="text"
+                  value={form.name}
+                  onChange={(e) => setForm({ ...form, name: e.target.value })}
+                  placeholder="你的昵称"
+                  className="w-full px-4 py-2.5 border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-xl focus:outline-none focus:border-primary"
+                />
               </div>
-            )}
+              <div>
+                <label className="block text-sm font-medium mb-1 text-gray-600 dark:text-gray-400">邮箱</label>
+                <input
+                  type="email"
+                  value={form.email}
+                  onChange={(e) => setForm({ ...form, email: e.target.value })}
+                  placeholder="你的邮箱（可选）"
+                  className="w-full px-4 py-2.5 border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-xl focus:outline-none focus:border-primary"
+                />
+              </div>
+            </div>
             <div>
               <label className="block text-sm font-medium mb-2 text-gray-600 dark:text-gray-400">反馈类型</label>
               <div className="flex flex-wrap gap-2">
