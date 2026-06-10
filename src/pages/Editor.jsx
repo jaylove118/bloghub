@@ -70,6 +70,7 @@ export default function Editor() {
     const content = ta.value
     const selected = content.substring(start, end)
     const newText = content.substring(0, start) + prefix + selected + suffix + content.substring(end)
+    console.log('[Editor] prefix=%o suffix=%o start=%d end=%d selected=%o newText=%o', prefix, suffix, start, end, selected, newText)
     handleChange({ content: newText })
     requestAnimationFrame(() => {
       ta.focus()
