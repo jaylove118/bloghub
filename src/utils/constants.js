@@ -36,3 +36,15 @@ export function readingTime(content) {
   const minutes = Math.ceil(text.length / charsPerMinute)
   return Math.max(1, minutes)
 }
+
+export const POPULAR_TAGS = [
+  'React', 'Vue', 'Angular', 'Next.js', 'TypeScript', 'JavaScript',
+  'Node.js', 'Python', 'Java', 'Go', 'Rust', 'C++', 'C#', 'PHP',
+  'Docker', 'Kubernetes', 'AWS', 'Linux', 'Git', 'MySQL', 'Redis',
+  'MongoDB', 'GraphQL', 'REST', 'API', 'CSS', 'Tailwind', 'HTML',
+  'Flutter', 'Swift', 'Kotlin', 'AI', 'Machine Learning', '前端', '后端',
+  '全栈', '开源', '微服务', 'DevOps', 'Webpack', 'Vite', 'Spring',
+  'Django', 'FastAPI', 'Laravel', 'Nginx',
+]
+
+export const TAG_WHITELIST = new Set(POPULAR_TAGS)

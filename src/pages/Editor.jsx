@@ -4,7 +4,7 @@ import { api, TOKEN_KEY } from '../context/api'
 import { useAuth } from '../context/AuthContext'
 import { ArrowLeft, Eye, Image, X, RotateCcw, Check, FileText, Send, Bold, Italic, Code, Quote, List, Heading, Columns } from 'lucide-react'
 import { parseMarkdown } from '../lib/index'
-import { categoryOptions } from '../utils/constants'
+import { categoryOptions, POPULAR_TAGS } from '../utils/constants'
 import { handleError } from '../utils/errors'
 import DOMPurify from 'dompurify'
 
@@ -476,6 +476,21 @@ export default function Editor() {
                   添加
                 </button>
               </div>
+              {formData.tags.length < 5 && (
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  <span className="text-xs text-gray-400 dark:text-gray-500 mr-1 self-center">常用:</span>
+                  {POPULAR_TAGS.filter(t => !formData.tags.includes(t)).slice(0, 30).map(tag => (
+                    <button
+                      key={tag}
+                      type="button"
+                      onClick={() => handleChange({ tags: [...formData.tags, tag] })}
+                      className="px-2 py-0.5 text-xs bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-full hover:bg-primary/20 hover:text-primary transition"
+                    >
+                      {tag}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
 
             <div>

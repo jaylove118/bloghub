@@ -2,41 +2,10 @@ import { Outlet, Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { Home, FileText, User, Settings, LogOut, Plus, Search, Menu as MenuIcon, Sun, Moon } from 'lucide-react'
-import { categoryMap } from '../utils/constants'
+import { categoryMap, TAG_WHITELIST, POPULAR_TAGS } from '../utils/constants'
 import { useTheme } from '../context/ThemeContext'
 import { api } from '../context/api'
 import NotificationBell from './NotificationBell'
-
-const TAG_WHITELIST = new Set([
-  // 前端
-  'React', 'Vue', 'Angular', 'Svelte', 'Next.js', 'Nuxt', 'Gatsby', 'jQuery',
-  'JavaScript', 'TypeScript', 'HTML', 'CSS', 'SCSS', 'Tailwind', 'Bootstrap',
-  'Webpack', 'Vite', 'ESLint', 'Prettier', 'Babel',
-  // 后端
-  'Node.js', 'Express', 'NestJS', 'Koa', 'Fastify',
-  'Python', 'Django', 'Flask', 'FastAPI', 'Tornado',
-  'Java', 'Spring', 'Spring Boot', 'MyBatis', 'Hibernate',
-  'Go', 'Gin', 'Echo', 'Fiber',
-  'Rust', 'Actix', 'Rocket',
-  'C++', 'C', 'C#', '.NET', 'ASP.NET',
-  'PHP', 'Laravel', 'Symfony',
-  'Ruby', 'Rails',
-  // 数据库
-  'MySQL', 'PostgreSQL', 'MongoDB', 'Redis', 'SQLite', 'Elasticsearch',
-  'GraphQL', 'REST', 'gRPC',
-  // DevOps/云
-  'Docker', 'Kubernetes', 'AWS', 'Azure', 'GCP', 'Nginx', 'CI/CD',
-  'Linux', 'Git', 'GitHub', 'GitLab',
-  // 移动端
-  'Swift', 'Kotlin', 'Flutter', 'React Native',
-  // AI/数据
-  'AI', 'Machine Learning', 'Deep Learning', 'NLP', 'TensorFlow', 'PyTorch',
-  'Data Science', 'Big Data',
-  // 其他
-  'API', '微服务', '前端', '后端', '全栈', '开源',
-])
-
-const DEFAULT_TAGS = ['React', 'JavaScript', 'CSS', 'Node.js', 'Python', 'C++']
 
 export default function Layout() {
   const { user, isAuthenticated, logout } = useAuth()
@@ -247,7 +216,7 @@ export default function Layout() {
               <div className="flex flex-wrap gap-2">
                 {(function () {
                   const dbValid = popularTags.map(t => t.tag).filter(t => TAG_WHITELIST.has(t))
-                  const merged = [...new Set([...DEFAULT_TAGS, ...dbValid])]
+                  const merged = [...new Set([...POPULAR_TAGS, ...dbValid])]
                   return merged.map(tag => (
                     <button
                       key={tag}
