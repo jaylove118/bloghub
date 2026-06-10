@@ -1,7 +1,7 @@
 import { Router } from 'express'
-import crypto from 'crypto'
 import pool from '../config/db.js'
 import { validate } from '../middleware/validate.js'
+import { authRequired } from '../middleware/auth.js'
 import { sendSubscribeConfirmation } from '../utils/email.js'
 
 const router = Router()
@@ -9,32 +9,27 @@ const router = Router()
 router.post('/subscribe', validate({ email: { required: true, max: 100 } }), async (req, res, next) => {
   try {
     const { email } = req.body
-    const token = crypto.randomBytes(32).toString('hex')
     await pool.query(
-      'INSERT INTO subscribers (email, verify_token) VALUES (?, ?) ON DUPLICATE KEY UPDATE verify_token = ?',
-      [email, token, token]
+      'INSERT INTO subscribers (email, is_verified) VALUES (?, 1) ON DUPLICATE KEY UPDATE is_verified = 1',
+      [email]
     )
     try {
-      await sendSubscribeConfirmation(email, token)
+      await sendSubscribeConfirmation(email, null)
     } catch {
-      // Email send failed, but subscription is recorded — user can still verify later
+      // Email send failed, but subscription is active
     }
-    res.json({ message: '订阅成功，请查看邮箱确认' })
+    res.json({ message: '订阅成功！新文章发布时会通知你' })
   } catch (err) {
     next(err)
   }
 })
 
-router.get('/verify', async (req, res, next) => {
+router.get('/status', authRequired, async (req, res, next) => {
   try {
-    const { token } = req.query
-    if (!token) return res.status(400).json({ message: '缺少验证token' })
-    const [result] = await pool.query(
-      'UPDATE subscribers SET is_verified = 1, verify_token = NULL WHERE verify_token = ?',
-      [token]
-    )
-    if (result.affectedRows === 0) return res.status(404).json({ message: '无效的验证链接' })
-    res.json({ message: '邮箱验证成功' })
+    const [users] = await pool.query('SELECT email FROM users WHERE id = ?', [req.userId])
+    if (users.length === 0) return res.json({ subscribed: false })
+    const [rows] = await pool.query('SELECT id FROM subscribers WHERE email = ?', [users[0].email])
+    res.json({ subscribed: rows.length > 0, email: users[0].email })
   } catch (err) {
     next(err)
   }

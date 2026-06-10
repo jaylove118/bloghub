@@ -17,6 +17,7 @@ export default function About() {
   const [form, setForm] = useState({ name: '', email: '', type: 'suggestion', content: '' })
   const [sending, setSending] = useState(false)
   const [sent, setSent] = useState(false)
+  const [error, setError] = useState('')
 
   useSEO({ title: '关于 - BlogHub', description: 'BlogHub 是一个全功能的博客平台，支持 Markdown 写作和社区互动。' })
 
@@ -24,10 +25,13 @@ export default function About() {
     e.preventDefault()
     if (!form.content.trim()) return
     setSending(true)
+    setError('')
     try {
       await api.feedback.send(form)
       setSent(true)
-    } catch {} finally {
+    } catch (err) {
+      setError(err.message || '提交失败，请稍后重试')
+    } finally {
       setSending(false)
     }
   }
@@ -82,7 +86,7 @@ export default function About() {
         {sent ? (
           <div className="relative bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl p-6 animate-slide-up">
             <button
-              onClick={() => { setSent(false); setForm({ name: '', email: '', type: 'suggestion', content: '' }) }}
+              onClick={() => { setSent(false); setError(''); setForm({ name: '', email: '', type: 'suggestion', content: '' }) }}
               className="absolute top-3 right-3 p-1 text-green-600 dark:text-green-400 hover:bg-green-100 dark:hover:bg-green-800/40 rounded-lg transition"
             >
               <X size={18} />
@@ -150,6 +154,9 @@ export default function About() {
                 className="w-full px-4 py-2.5 border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-xl focus:outline-none focus:border-primary resize-none"
               />
             </div>
+            {error && (
+              <p className="text-red-500 text-sm bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg px-4 py-2">{error}</p>
+            )}
             <button
               type="submit"
               disabled={sending || !form.content.trim()}

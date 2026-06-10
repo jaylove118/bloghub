@@ -327,6 +327,10 @@ export const api = {
         body: JSON.stringify({ email }),
       })
     },
+
+    async status() {
+      return await request('/subscribers/status')
+    },
   },
 
   feedback: {

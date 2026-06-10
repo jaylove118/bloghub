@@ -1,10 +1,25 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { api } from '../context/api'
+import { useAuth } from '../context/AuthContext'
+import { CheckCircle } from 'lucide-react'
 
 export default function SubscribeForm({ variant = 'inline' }) {
+  const { isAuthenticated, user } = useAuth()
   const [email, setEmail] = useState('')
   const [status, setStatus] = useState('idle')
   const [message, setMessage] = useState('')
+  const [alreadySubscribed, setAlreadySubscribed] = useState(false)
+
+  useEffect(() => {
+    if (isAuthenticated && user?.email) {
+      setEmail(user.email)
+      api.subscribers.status()
+        .then(data => {
+          if (data.subscribed) setAlreadySubscribed(true)
+        })
+        .catch(() => {})
+    }
+  }, [isAuthenticated, user])
 
   const handleSubscribe = async (e) => {
     e.preventDefault()
@@ -15,8 +30,23 @@ export default function SubscribeForm({ variant = 'inline' }) {
       setMessage(data.message || '订阅成功！')
       setStatus('success')
       setEmail('')
+      setAlreadySubscribed(true)
     } catch (err) {
       setMessage(err.message || '订阅失败，请重试')
+      setStatus('error')
+    }
+  }
+
+  const handleUnsubscribe = async () => {
+    if (!user?.email) return
+    setStatus('loading')
+    try {
+      const data = await api.subscribers.unsubscribe(user.email)
+      setMessage(data.message || '已取消订阅')
+      setStatus('success')
+      setAlreadySubscribed(false)
+    } catch (err) {
+      setMessage(err.message || '操作失败')
       setStatus('error')
     }
   }
@@ -26,7 +56,22 @@ export default function SubscribeForm({ variant = 'inline' }) {
       <div>
         <h4 className="font-semibold mb-2">订阅更新</h4>
         <p className="text-sm text-gray-400 mb-3">获取最新文章和博客动态</p>
-        {status === 'success' ? (
+        {alreadySubscribed ? (
+          <div>
+            <p className="text-green-400 text-sm flex items-center gap-1">
+              <CheckCircle size={14} /> 已订阅
+            </p>
+            {isAuthenticated && (
+              <button
+                onClick={handleUnsubscribe}
+                disabled={status === 'loading'}
+                className="text-xs text-gray-500 hover:text-red-400 mt-1 transition"
+              >
+                取消订阅
+              </button>
+            )}
+          </div>
+        ) : status === 'success' ? (
           <p className="text-green-400 text-sm">{message}</p>
         ) : (
           <form onSubmit={handleSubscribe} className="flex gap-2">
@@ -56,7 +101,22 @@ export default function SubscribeForm({ variant = 'inline' }) {
       <div className="max-w-md mx-auto text-center">
         <h3 className="text-xl font-bold mb-2">订阅我们的博客</h3>
         <p className="text-gray-600 dark:text-gray-400 mb-4">获取最新文章、技术分享和博客动态</p>
-        {status === 'success' ? (
+        {alreadySubscribed ? (
+          <div className="py-2">
+            <p className="text-green-500 font-medium flex items-center justify-center gap-1.5">
+              <CheckCircle size={18} /> 已订阅 · 新文章发布时会通知你
+            </p>
+            {isAuthenticated && (
+              <button
+                onClick={handleUnsubscribe}
+                disabled={status === 'loading'}
+                className="text-xs text-gray-400 hover:text-red-500 mt-2 transition"
+              >
+                取消订阅
+              </button>
+            )}
+          </div>
+        ) : status === 'success' ? (
           <p className="text-green-500 font-medium">{message}</p>
         ) : (
           <form onSubmit={handleSubscribe} className="flex flex-col sm:flex-row gap-2">
