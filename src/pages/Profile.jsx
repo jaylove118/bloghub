@@ -14,7 +14,7 @@ export default function Profile() {
   const [posts, setPosts] = useState([])
   const [loading, setLoading] = useState(true)
 
-  const isOwn = currentUser?.id === id
+  const isOwn = String(currentUser?.id) === id
   const navigate = useNavigate()
 
   const handleProfilePin = async (e, postId) => {
