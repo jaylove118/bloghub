@@ -46,6 +46,7 @@ function normalizeUser(u) {
     avatar: u.avatar,
     bio: u.bio,
     github: u.github,
+    role: u.role || 'user',
     createdAt: u.created_at,
   }
 }
@@ -217,6 +218,18 @@ export const api = {
 
     async restoreRevision(postId, revisionId) {
       await request('/posts/' + postId + '/restore/' + revisionId, { method: 'POST' })
+    },
+
+    async adminGetAll(filters = {}) {
+      const params = new URLSearchParams()
+      if (filters.page) params.set('page', filters.page)
+      if (filters.limit) params.set('limit', filters.limit)
+      const qs = params.toString()
+      const data = await request('/admin/posts' + (qs ? '?' + qs : ''))
+      return {
+        posts: data.posts.map(normalizePost),
+        pagination: data.pagination || { page: 1, limit: 20, total: 0 },
+      }
     },
   },
 

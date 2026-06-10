@@ -6,7 +6,7 @@ const router = Router()
 router.get('/', async (_req, res, next) => {
   try {
     const [users] = await pool.query(
-      'SELECT id, username, avatar, bio, github, created_at FROM users'
+      'SELECT id, username, avatar, bio, github, role, created_at FROM users'
     )
     res.json({ users })
   } catch (err) {
@@ -17,7 +17,7 @@ router.get('/', async (_req, res, next) => {
 router.get('/:id', async (req, res, next) => {
   try {
     const [users] = await pool.query(
-      'SELECT id, username, avatar, bio, github, created_at FROM users WHERE id = ?',
+      'SELECT id, username, avatar, bio, github, role, created_at FROM users WHERE id = ?',
       [req.params.id]
     )
     if (users.length === 0) {

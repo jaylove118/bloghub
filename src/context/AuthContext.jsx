@@ -90,7 +90,7 @@ export function AuthProvider({ children }) {
   }
 
   return (
-    <AuthContext.Provider value={{ ...state, login, register, logout, loginWithToken, updateProfile }}>
+    <AuthContext.Provider value={{ ...state, isAdmin: state.user?.role === 'admin', login, register, logout, loginWithToken, updateProfile }}>
       {children}
     </AuthContext.Provider>
   )

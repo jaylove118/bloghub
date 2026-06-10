@@ -29,6 +29,8 @@ export default function BlogDetail() {
   const [error, setError] = useState(null)
 
   const isAuthor = user?.id === post?.authorId
+  const isAdmin = user?.role === 'admin'
+  const canManage = isAuthor || isAdmin
 
   const tocData = useTableOfContents(post?.content || '')
   const displayContent = tocData?.addIds ? tocData.addIds(post?.content || '') : post?.content || ''
@@ -304,7 +306,7 @@ export default function BlogDetail() {
               <ShareButtons title={post.title} />
             </div>
 
-            {isAuthor && (
+            {canManage && (
               <div className="flex items-center gap-2 flex-wrap">
                 <button
                   onClick={handlePin}
@@ -424,7 +426,7 @@ function CommentItem({ comment, replies, onDelete, onLike, currentUser, onReply 
             >
               回复
             </button>
-            {currentUser?.id === comment.userId && (
+            {(currentUser?.id === comment.userId || currentUser?.role === 'admin') && (
               <button
                 onClick={() => onDelete(comment.id)}
                 className="text-sm text-gray-500 dark:text-gray-400 hover:text-red-500"

@@ -74,10 +74,19 @@ router.post('/register', registerValidation, async (req, res, next) => {
     await pool.query('DELETE FROM email_verifications WHERE email = ?', [email])
 
     const userId = result.insertId
-    const token = jwt.sign({ userId }, process.env.JWT_SECRET, { expiresIn: '7d' })
+
+    // Auto-promote to admin if email is in ADMIN_EMAILS
+    const adminEmails = process.env.ADMIN_EMAILS?.split(',').map(e => e.trim().toLowerCase()) || []
+    let role = 'user'
+    if (adminEmails.includes(email.toLowerCase())) {
+      await pool.query('UPDATE users SET role = ? WHERE id = ?', ['admin', userId])
+      role = 'admin'
+    }
+
+    const token = jwt.sign({ userId, role }, process.env.JWT_SECRET, { expiresIn: '7d' })
 
     const [users] = await pool.query(
-      'SELECT id, username, email, avatar, bio, github, email_verified, created_at FROM users WHERE id = ?',
+      'SELECT id, username, email, avatar, bio, github, role, email_verified, created_at FROM users WHERE id = ?',
       [userId]
     )
 
@@ -107,7 +116,14 @@ router.post('/login', loginValidation, async (req, res, next) => {
       throw new AppError(401, '邮箱或密码错误')
     }
 
-    const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, { expiresIn: '7d' })
+    // Auto-promote admin emails on login
+    const adminEmails = process.env.ADMIN_EMAILS?.split(',').map(e => e.trim().toLowerCase()) || []
+    if (adminEmails.includes(user.email?.toLowerCase()) && user.role !== 'admin') {
+      await pool.query('UPDATE users SET role = ? WHERE id = ?', ['admin', user.id])
+      user.role = 'admin'
+    }
+
+    const token = jwt.sign({ userId: user.id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '7d' })
     const { password: _, ...safe } = user
 
     res.json({ user: safe, token })
@@ -119,7 +135,7 @@ router.post('/login', loginValidation, async (req, res, next) => {
 router.get('/me', authRequired, async (req, res, next) => {
   try {
     const [users] = await pool.query(
-      'SELECT id, username, email, avatar, bio, github, created_at FROM users WHERE id = ?',
+      'SELECT id, username, email, avatar, bio, github, role, created_at FROM users WHERE id = ?',
       [req.userId]
     )
     if (users.length === 0) {
@@ -155,7 +171,7 @@ router.put('/profile', authRequired, profileValidation, async (req, res, next) =
     await pool.query(`UPDATE users SET ${fields.join(', ')} WHERE id = ?`, values)
 
     const [users] = await pool.query(
-      'SELECT id, username, email, avatar, bio, github, created_at FROM users WHERE id = ?',
+      'SELECT id, username, email, avatar, bio, github, role, created_at FROM users WHERE id = ?',
       [req.userId]
     )
     res.json({ user: users[0] })
@@ -306,19 +322,31 @@ router.get('/github/callback', async (req, res, next) => {
     const ghUser = await userRes.json()
 
     // Find or create user
-    const [existing] = await pool.query('SELECT * FROM users WHERE github = ? OR email = ?', [ghUser.login, ghUser.email || ghUser.login + '@github.user'])
+    const ghEmail = ghUser.email || ghUser.login + '@github.user'
+    const [existing] = await pool.query('SELECT * FROM users WHERE github = ? OR email = ?', [ghUser.login, ghEmail])
     let userId
+    let role = 'user'
     if (existing.length > 0) {
       userId = existing[0].id
+      role = existing[0].role || 'user'
     } else {
+      const adminEmails = process.env.ADMIN_EMAILS?.split(',').map(e => e.trim().toLowerCase()) || []
+      role = adminEmails.includes(ghEmail.toLowerCase()) ? 'admin' : 'user'
       const [result] = await pool.query(
-        'INSERT INTO users (username, email, password, avatar, github) VALUES (?, ?, ?, ?, ?)',
-        [ghUser.login, ghUser.email || ghUser.login + '@github.user', '', ghUser.avatar_url || '', ghUser.login]
+        'INSERT INTO users (username, email, password, avatar, github, role) VALUES (?, ?, ?, ?, ?, ?)',
+        [ghUser.login, ghEmail, '', ghUser.avatar_url || '', ghUser.login, role]
       )
       userId = result.insertId
     }
 
-    const token = jwt.sign({ userId }, process.env.JWT_SECRET, { expiresIn: '7d' })
+    // Auto-promote on login if ADMIN_EMAILS matches
+    const adminEmails = process.env.ADMIN_EMAILS?.split(',').map(e => e.trim().toLowerCase()) || []
+    if (adminEmails.includes(ghEmail.toLowerCase()) && role !== 'admin') {
+      await pool.query('UPDATE users SET role = ? WHERE id = ?', ['admin', userId])
+      role = 'admin'
+    }
+
+    const token = jwt.sign({ userId, role }, process.env.JWT_SECRET, { expiresIn: '7d' })
     const siteUrl = process.env.SITE_URL || 'http://localhost:5173'
     res.cookie('oauth_token', token, {
       httpOnly: false,
@@ -366,17 +394,28 @@ router.get('/google/callback', async (req, res, next) => {
 
     const [existing] = await pool.query('SELECT * FROM users WHERE email = ?', [gUser.email])
     let userId
+    let role = 'user'
     if (existing.length > 0) {
       userId = existing[0].id
+      role = existing[0].role || 'user'
     } else {
+      const adminEmails = process.env.ADMIN_EMAILS?.split(',').map(e => e.trim().toLowerCase()) || []
+      role = adminEmails.includes(gUser.email.toLowerCase()) ? 'admin' : 'user'
       const [result] = await pool.query(
-        'INSERT INTO users (username, email, password, avatar) VALUES (?, ?, ?, ?)',
-        [gUser.name || gUser.email.split('@')[0], gUser.email, '', gUser.picture || '']
+        'INSERT INTO users (username, email, password, avatar, role) VALUES (?, ?, ?, ?, ?)',
+        [gUser.name || gUser.email.split('@')[0], gUser.email, '', gUser.picture || '', role]
       )
       userId = result.insertId
     }
 
-    const token = jwt.sign({ userId }, process.env.JWT_SECRET, { expiresIn: '7d' })
+    // Auto-promote on login if ADMIN_EMAILS matches
+    const adminEmails = process.env.ADMIN_EMAILS?.split(',').map(e => e.trim().toLowerCase()) || []
+    if (adminEmails.includes(gUser.email.toLowerCase()) && role !== 'admin') {
+      await pool.query('UPDATE users SET role = ? WHERE id = ?', ['admin', userId])
+      role = 'admin'
+    }
+
+    const token = jwt.sign({ userId, role }, process.env.JWT_SECRET, { expiresIn: '7d' })
     const siteUrl = process.env.SITE_URL || 'http://localhost:5173'
     res.cookie('oauth_token', token, {
       httpOnly: false,

@@ -1,6 +1,6 @@
 import { Router } from 'express'
 import pool from '../config/db.js'
-import { authRequired } from '../middleware/auth.js'
+import { authRequired, adminRequired } from '../middleware/auth.js'
 import { validate } from '../middleware/validate.js'
 import { AppError } from '../utils/errors.js'
 
@@ -161,7 +161,7 @@ router.put('/:id', authRequired, postValidation, async (req, res, next) => {
     if (existing.length === 0) {
       throw new AppError(404, '文章不存在')
     }
-    if (existing[0].author_id !== req.userId) {
+    if (existing[0].author_id !== req.userId && req.userRole !== 'admin') {
       throw new AppError(403, '无权修改他人文章')
     }
 
@@ -202,7 +202,7 @@ router.delete('/:id', authRequired, async (req, res, next) => {
     if (existing.length === 0) {
       throw new AppError(404, '文章不存在')
     }
-    if (existing[0].author_id !== req.userId) {
+    if (existing[0].author_id !== req.userId && req.userRole !== 'admin') {
       throw new AppError(403, '无权删除他人文章')
     }
     await pool.query('DELETE FROM posts WHERE id = ?', [id])
@@ -230,7 +230,7 @@ router.post('/:id/restore/:revId', authRequired, async (req, res, next) => {
     const { id, revId } = req.params
     const [existing] = await pool.query('SELECT * FROM posts WHERE id = ?', [id])
     if (existing.length === 0) throw new AppError(404, '文章不存在')
-    if (existing[0].author_id !== req.userId) throw new AppError(403, '无权操作')
+    if (existing[0].author_id !== req.userId && req.userRole !== 'admin') throw new AppError(403, '无权操作')
 
     const [revs] = await pool.query('SELECT * FROM post_revisions WHERE id = ? AND post_id = ?', [revId, id])
     if (revs.length === 0) throw new AppError(404, '版本不存在')
@@ -341,7 +341,7 @@ router.put('/:id/pin', authRequired, async (req, res, next) => {
     const { id } = req.params
     const [existing] = await pool.query('SELECT author_id, is_pinned FROM posts WHERE id = ?', [id])
     if (existing.length === 0) throw new AppError(404, '文章不存在')
-    if (existing[0].author_id !== req.userId) throw new AppError(403, '无权操作他人文章')
+    if (existing[0].author_id !== req.userId && req.userRole !== 'admin') throw new AppError(403, '无权操作他人文章')
 
     const newPinned = existing[0].is_pinned ? 0 : 1
     await pool.query('UPDATE posts SET is_pinned = ? WHERE id = ?', [newPinned, id])

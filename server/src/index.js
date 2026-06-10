@@ -15,7 +15,7 @@ import userRoutes from './routes/users.js'
 import uploadRoutes from './routes/upload.js'
 import notificationRoutes from './routes/notifications.js'
 import subscriberRoutes from './routes/subscribers.js'
-import { authRequired } from './middleware/auth.js'
+import { authRequired, adminRequired } from './middleware/auth.js'
 import swaggerDoc from './config/swagger.js'
 
 dotenv.config({ path: new URL('../.env', import.meta.url) })
@@ -141,7 +141,7 @@ app.get('/api/sitemap.txt', async (_req, res) => {
   } catch { res.status(500).json({ message: 'Sitemap生成失败' }) }
 })
 
-app.get('/api/admin/analytics', authRequired, async (_req, res) => {
+app.get('/api/admin/analytics', authRequired, adminRequired, async (_req, res) => {
   try {
     const [daily] = await pool.query(
       "SELECT DATE(created_at) AS date, COUNT(*) AS views FROM analytics_views WHERE created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY) GROUP BY DATE(created_at) ORDER BY date"
@@ -153,14 +153,14 @@ app.get('/api/admin/analytics', authRequired, async (_req, res) => {
   } catch { res.json({ daily: [], topReferrers: [] }) }
 })
 
-app.get('/api/subscribers', authRequired, async (_req, res) => {
+app.get('/api/subscribers', authRequired, adminRequired, async (_req, res) => {
   try {
     const [rows] = await pool.query('SELECT * FROM subscribers ORDER BY created_at DESC')
     res.json({ subscribers: rows })
   } catch { res.json({ subscribers: [] }) }
 })
 
-app.get('/api/admin/stats', authRequired, async (_req, res) => {
+app.get('/api/admin/stats', authRequired, adminRequired, async (_req, res) => {
   try {
     const [[{ totalPosts }]] = await pool.query("SELECT COUNT(*) AS totalPosts FROM posts WHERE status = 'published'")
     const [[{ totalUsers }]] = await pool.query("SELECT COUNT(*) AS totalUsers FROM users")
@@ -170,6 +170,31 @@ app.get('/api/admin/stats', authRequired, async (_req, res) => {
     const [recentUsers] = await pool.query("SELECT id, username, email, created_at FROM users ORDER BY created_at DESC LIMIT 5")
     res.json({ totalPosts, totalUsers, totalComments, totalViews, topPosts, recentUsers })
   } catch (err) { res.status(500).json({ message: '统计获取失败' }) }
+})
+
+app.get('/api/admin/posts', authRequired, adminRequired, async (req, res, next) => {
+  try {
+    const pageNum = Math.max(1, parseInt(req.query.page) || 1)
+    const limitNum = Math.min(50, Math.max(1, parseInt(req.query.limit) || 20))
+    const offset = (pageNum - 1) * limitNum
+
+    const [[{ total }]] = await pool.query('SELECT COUNT(*) AS total FROM posts')
+    const [rows] = await pool.query(
+      'SELECT p.*, u.username AS author_name, u.avatar AS author_avatar FROM posts p JOIN users u ON p.author_id = u.id ORDER BY p.created_at DESC LIMIT ? OFFSET ?',
+      [limitNum, offset]
+    )
+
+    const posts = rows.map(post => ({
+      ...post,
+      tags: typeof post.tags === 'string' ? JSON.parse(post.tags) : (post.tags || []),
+      likes: typeof post.likes === 'string' ? JSON.parse(post.likes) : (post.likes || []),
+      favorites: typeof post.favorites === 'string' ? JSON.parse(post.favorites) : (post.favorites || []),
+    }))
+
+    res.json({ posts, pagination: { page: pageNum, limit: limitNum, total } })
+  } catch (err) {
+    next(err)
+  }
 })
 
 if (process.env.NODE_ENV === 'production') {

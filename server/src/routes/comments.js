@@ -1,6 +1,6 @@
 import { Router } from 'express'
 import pool from '../config/db.js'
-import { authRequired } from '../middleware/auth.js'
+import { authRequired, adminRequired } from '../middleware/auth.js'
 import { validate } from '../middleware/validate.js'
 import { AppError } from '../utils/errors.js'
 
@@ -76,7 +76,7 @@ router.delete('/:id', authRequired, async (req, res, next) => {
     if (rows.length === 0) {
       throw new AppError(404, '评论不存在')
     }
-    if (rows[0].user_id !== req.userId) {
+    if (rows[0].user_id !== req.userId && req.userRole !== 'admin') {
       throw new AppError(403, '无权删除他人评论')
     }
     await pool.query(
