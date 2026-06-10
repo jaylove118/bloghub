@@ -8,10 +8,21 @@ export default function RelatedPosts({ postId, category, tags, currentPostId }) 
   const [posts, setPosts] = useState([])
 
   useEffect(() => {
-    api.posts.getAll({ category, limit: 4 }).then(({ posts: data }) => {
-      setPosts(data.filter((p) => p.id !== Number(currentPostId)).slice(0, 3))
+    const tagSet = new Set(tags || [])
+    api.posts.getAll({ category, limit: 20 }).then(({ posts: data }) => {
+      const others = data.filter((p) => p.id !== Number(currentPostId))
+      const scored = others.map(p => {
+        const postTags = p.tags || []
+        const overlap = postTags.filter(t => tagSet.has(t)).length
+        return { ...p, _score: overlap }
+      })
+      scored.sort((a, b) => {
+        if (b._score !== a._score) return b._score - a._score
+        return new Date(b.createdAt) - new Date(a.createdAt)
+      })
+      setPosts(scored.slice(0, 3))
     }).catch(() => {})
-  }, [category, currentPostId])
+  }, [category, tags, currentPostId])
 
   if (posts.length === 0) return null
 

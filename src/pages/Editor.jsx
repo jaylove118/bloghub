@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate, Link, Navigate } from 'react-router-dom'
 import { api, TOKEN_KEY } from '../context/api'
 import { useAuth } from '../context/AuthContext'
-import { ArrowLeft, Eye, Image, X, RotateCcw, Check, FileText, Send, Bold, Italic, Code, Quote, List, Heading, Columns } from 'lucide-react'
+import { ArrowLeft, Eye, Image, X, RotateCcw, Check, FileText, Send, Bold, Italic, Code, Quote, List, Heading, Columns, LinkIcon, ChevronDown, ChevronUp } from 'lucide-react'
 import { parseMarkdown } from '../lib/index'
 import { categoryOptions, POPULAR_TAGS, TAG_CATEGORY_MAP } from '../utils/constants'
 import { handleError } from '../utils/errors'
@@ -26,6 +26,19 @@ function saveDraft(data) {
 
 function clearDraft() {
   localStorage.removeItem(DRAFT_KEY)
+}
+
+function ToolBtn({ icon, label, onAction, primary }) {
+  return (
+    <button
+      type="button"
+      onMouseDown={(e) => { e.preventDefault(); onAction(); }}
+      title={label}
+      className={`p-2 rounded-lg transition text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-gray-100 ${primary ? 'text-primary hover:text-primary dark:text-primary dark:hover:text-primary' : ''}`}
+    >
+      {icon}
+    </button>
+  )
 }
 
 export default function Editor() {
@@ -57,6 +70,7 @@ export default function Editor() {
   const [draftSaved, setDraftSaved] = useState(false)
   const [saveError, setSaveError] = useState(null)
   const [previewLightbox, setPreviewLightbox] = useState(null)
+  const [metaOpen, setMetaOpen] = useState(false)
 
   const draftTimerRef = useRef(null)
   const textareaRef = useRef(null)
@@ -273,25 +287,26 @@ export default function Editor() {
   if (!user) return <Navigate to="/login" />
 
   return (
-    <div className="min-h-[calc(100vh-4rem)]">
-      <header className="sticky top-16 z-30 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-600 dark:border-gray-700">
+    <div className="min-h-[calc(100vh-4rem)] bg-gray-50 dark:bg-gray-950">
+      {/* Top bar */}
+      <header className="sticky top-16 z-30 bg-white/80 dark:bg-gray-900/80 backdrop-blur border-b border-gray-200 dark:border-gray-800">
         <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between">
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
             <Link
               to={isEditing ? `/blog/${id}` : '/blogs'}
-              className="flex items-center gap-1 text-gray-600 dark:text-gray-400 dark:text-gray-500 hover:text-primary"
+              className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-primary transition-colors"
             >
               <ArrowLeft size={18} />
-              返回
+              <span className="hidden sm:inline">返回</span>
             </Link>
-            <h1 className="font-semibold">{isEditing ? '编辑文章' : '写文章'}</h1>
+            <span className="text-gray-300 dark:text-gray-700">|</span>
+            <h1 className="font-semibold text-sm">{isEditing ? '编辑文章' : '写文章'}</h1>
             {formData.status === 'draft' && (
-              <span className="px-2 py-0.5 text-xs bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 rounded-full">草稿</span>
+              <span className="px-2 py-0.5 text-xs bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 rounded-full font-medium">草稿</span>
             )}
             {draftSaved && (
-              <span className="text-xs text-green-600 flex items-center gap-1">
-                <Check size={14} />
-                已保存
+              <span className="text-xs text-green-600 dark:text-green-400 flex items-center gap-1 animate-fade-in">
+                <Check size={14} />已保存
               </span>
             )}
           </div>
@@ -300,46 +315,42 @@ export default function Editor() {
               <button
                 type="button"
                 onClick={doSaveDraft}
-                className="px-3 py-2 text-sm text-gray-500 dark:text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:text-gray-300 transition"
-                title="手动保存草稿到本地"
+                className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition"
+                title="手动保存草稿"
               >
                 <RotateCcw size={16} />
               </button>
             )}
-            <button
-              type="button"
-              onClick={() => {
-                if (!preview && !splitView) setPreview(true)
-                else if (preview && !splitView) { setPreview(false); setSplitView(true) }
-                else { setPreview(false); setSplitView(false) }
-              }}
-              className={`px-4 py-2 rounded-full transition ${
-                preview || splitView ? 'bg-primary text-white' : 'bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600'
-              }`}
-              title={!preview && !splitView ? '预览' : splitView ? '关闭分屏' : '分屏'}
-            >
-              {splitView ? <Columns size={18} /> : <Eye size={18} />}
-            </button>
+            <div className="flex bg-gray-100 dark:bg-gray-800 rounded-lg p-0.5">
+              <button type="button" onClick={() => { setPreview(false); setSplitView(false) }}
+                className={`px-3 py-1.5 rounded-md text-xs font-medium transition ${!preview && !splitView ? 'bg-white dark:bg-gray-700 shadow-sm text-gray-900 dark:text-gray-100' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'}`}>
+                <FileText size={15} />
+              </button>
+              <button type="button" onClick={() => { setPreview(true); setSplitView(false) }}
+                className={`px-3 py-1.5 rounded-md text-xs font-medium transition ${preview && !splitView ? 'bg-white dark:bg-gray-700 shadow-sm text-gray-900 dark:text-gray-100' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'}`}>
+                <Eye size={15} />
+              </button>
+              <button type="button" onClick={() => { setPreview(false); setSplitView(true) }}
+                className={`px-3 py-1.5 rounded-md text-xs font-medium transition ${splitView ? 'bg-white dark:bg-gray-700 shadow-sm text-gray-900 dark:text-gray-100' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'}`}>
+                <Columns size={15} />
+              </button>
+            </div>
             <button
               onClick={(e) => handleSubmit(e, 'draft')}
               disabled={loading}
-              className="px-4 py-2 text-gray-600 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-full hover:bg-gray-50 dark:hover:bg-gray-800 transition disabled:opacity-50 flex items-center gap-2"
+              className="px-4 py-2 text-sm text-gray-600 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition disabled:opacity-50 flex items-center gap-1.5"
             >
-              <FileText size={18} />
-              存草稿
+              <FileText size={16} />存草稿
             </button>
             <button
               onClick={(e) => handleSubmit(e, 'published')}
               disabled={loading}
-              className="px-6 py-2 bg-primary text-white rounded-full hover:bg-secondary transition disabled:opacity-50 flex items-center gap-2"
+              className="px-5 py-2 bg-primary text-white text-sm rounded-lg hover:bg-secondary transition disabled:opacity-50 flex items-center gap-1.5 font-medium shadow-sm"
             >
               {loading ? (
                 <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
               ) : (
-                <>
-                  <Send size={18} />
-                  发布
-                </>
+                <><Send size={16} />发布</>
               )}
             </button>
           </div>
@@ -351,63 +362,47 @@ export default function Editor() {
           <div className="flex items-center justify-between p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl">
             <div className="flex items-center gap-3">
               <RotateCcw size={18} className="text-amber-600" />
-              <span className="text-sm text-amber-800">检测到未发布的草稿，是否恢复？</span>
+              <span className="text-sm text-amber-800 dark:text-amber-200">检测到未发布的草稿，是否恢复？</span>
             </div>
             <div className="flex items-center gap-2">
-              <button
-                onClick={dismissDraft}
-                className="px-3 py-1.5 text-sm text-gray-500 hover:text-gray-700 dark:text-gray-300 transition"
-              >
-                丢弃
-              </button>
-              <button
-                onClick={restoreDraft}
-                className="px-4 py-1.5 text-sm bg-primary text-white rounded-lg hover:bg-secondary transition"
-              >
-                恢复草稿
-              </button>
+              <button onClick={dismissDraft} className="px-3 py-1.5 text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition">丢弃</button>
+              <button onClick={restoreDraft} className="px-4 py-1.5 text-sm bg-primary text-white rounded-lg hover:bg-secondary transition">恢复草稿</button>
             </div>
           </div>
         </div>
       )}
 
-      <div className="max-w-5xl mx-auto px-4 py-8">
+      <div className="max-w-5xl mx-auto px-4 py-6">
         {saveError && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4">
-            {saveError}
-            <button onClick={() => setSaveError(null)} className="ml-2 font-bold">&times;</button>
+          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 px-4 py-3 rounded-xl mb-4 flex items-center justify-between">
+            <span className="text-sm">{saveError}</span>
+            <button onClick={() => setSaveError(null)} className="text-red-400 hover:text-red-600">&times;</button>
           </div>
         )}
-        {preview ? (
-          <div className="bg-white dark:bg-gray-800 rounded-2xl p-8">
-            <h1 className="text-3xl font-bold mb-4">{formData.title || '无标题'}</h1>
-            <div className="flex items-center gap-4 mb-6">
-              <span className="px-3 py-1 bg-gray-100 dark:bg-gray-700 rounded-full text-sm">
+
+        {preview && !splitView ? (
+          /* Full preview mode */
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-8 md:p-12">
+            <h1 className="text-3xl font-bold mb-4 dark:text-gray-100">{formData.title || '无标题'}</h1>
+            <div className="flex items-center gap-3 mb-6">
+              <span className="px-3 py-1 bg-gray-100 dark:bg-gray-700 rounded-full text-sm dark:text-gray-300">
                 {categoryOptions.find(c => c.value === formData.category)?.label}
               </span>
               {formData.tags.map(tag => (
-                <span key={tag} className="px-2 py-0.5 bg-gray-100 dark:bg-gray-700 rounded text-sm">#{tag}</span>
+                <span key={tag} className="px-2 py-0.5 bg-gray-100 dark:bg-gray-700 rounded text-sm text-gray-600 dark:text-gray-400">#{tag}</span>
               ))}
             </div>
             {formData.coverImage && (
-              <img
-                src={formData.coverImage}
-                alt=""
-                className="w-full h-64 object-cover rounded-xl mb-6"
-              />
+              <img src={formData.coverImage} alt="" className="w-full max-h-80 object-cover rounded-xl mb-6" />
             )}
-            <div
-              className="prose"
+            <div className="prose max-w-none dark:text-gray-300"
               dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(parseMarkdown(formData.content)) }}
               onClick={(e) => {
                 const img = e.target.closest('img')
                 if (!img) return
                 const link = img.closest('a')
                 const src = link?.href || img.src
-                if (src && src.startsWith('http')) {
-                  e.preventDefault()
-                  setPreviewLightbox(src)
-                }
+                if (src?.startsWith('http')) { e.preventDefault(); setPreviewLightbox(src) }
               }}
             />
             {previewLightbox && (
@@ -418,97 +413,28 @@ export default function Editor() {
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-6">
-            <div>
+            {/* Title */}
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-6">
               <input
                 type="text"
                 value={formData.title}
                 onChange={(e) => handleChange({ title: e.target.value })}
-                placeholder="文章标题"
+                placeholder="文章标题..."
                 maxLength={200}
-                className="w-full text-3xl font-bold border-0 border-b-2 border-gray-100 focus:border-primary focus:ring-0 p-2"
+                className="w-full text-2xl md:text-3xl font-bold border-0 bg-transparent dark:text-gray-100 placeholder:text-gray-300 dark:placeholder:text-gray-600 focus:outline-none"
               />
-              <p className="text-xs text-gray-400 dark:text-gray-500 mt-1 text-right">{formData.title.length}/200</p>
-            </div>
-
-            <div className="flex flex-wrap gap-4">
-              <div className="w-full sm:w-48">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 dark:text-gray-300 mb-2">URL Slug</label>
-                <input
-                  type="text"
-                  value={formData.slug || ''}
-                  onChange={(e) => handleChange({ slug: e.target.value })}
-                  placeholder="自动生成"
-                  maxLength={200}
-                  className="w-full px-4 py-2 border border-gray-200 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-xl focus:outline-none focus:border-primary text-sm"
-                />
-              </div>
-              <div className="flex-1 min-w-[200px]">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">分类</label>
-                <select
-                  value={formData.category}
-                  onChange={(e) => handleChange({ category: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-200 dark:border-gray-600 rounded-xl focus:outline-none focus:border-primary"
-                >
-                  {categoryOptions.map(opt => (
-                    <option key={opt.value} value={opt.value}>{opt.label}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="w-full sm:w-auto">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 dark:text-gray-300 mb-2">
-                  定时发布（可选）
-                </label>
-                <input
-                  type="datetime-local"
-                  value={formData.scheduledAt}
-                  onChange={(e) => handleChange({ scheduledAt: e.target.value })}
-                  min={new Date().toISOString().slice(0, 16)}
-                  className="w-full sm:w-auto px-4 py-2 border border-gray-200 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-xl focus:outline-none focus:border-primary"
-                />
-              </div>
-
-              <div className="flex-1 min-w-[200px]">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 dark:text-gray-300 mb-2">封面图</label>
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={formData.coverImage}
-                    onChange={(e) => handleChange({ coverImage: e.target.value })}
-                    placeholder="输入图片URL或上传"
-                    maxLength={2000}
-                    className="flex-1 px-4 py-2 border border-gray-200 dark:border-gray-600 rounded-xl focus:outline-none focus:border-primary"
-                  />
-                  <label className={`px-4 py-2 rounded-xl cursor-pointer transition ${imageUploading ? 'bg-gray-300' : 'bg-gray-100 hover:bg-gray-200'}`}>
-                    {imageUploading ? (
-                      <div className="w-5 h-5 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
-                    ) : (
-                      <Image size={20} />
-                    )}
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleImageUpload}
-                      className="hidden"
-                      disabled={imageUploading}
-                    />
-                  </label>
-                </div>
+              <div className="flex items-center justify-between mt-3">
+                <span className="text-xs text-gray-400">{formData.title.length}/200</span>
               </div>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">标签（最多5个）</label>
-              <div className="flex flex-wrap gap-2 mb-2">
+            {/* Tags */}
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-6">
+              <div className="flex flex-wrap gap-2 mb-3">
                 {formData.tags.map(tag => (
-                  <span
-                    key={tag}
-                    className="px-3 py-1 bg-primary/10 text-primary rounded-full text-sm flex items-center gap-1"
-                  >
+                  <span key={tag} className="px-3 py-1.5 bg-primary/10 text-primary rounded-full text-sm flex items-center gap-1.5">
                     #{tag}
-                    <button type="button" onClick={() => handleRemoveTag(tag)}>
-                      <X size={14} />
-                    </button>
+                    <button type="button" onClick={() => handleRemoveTag(tag)} className="hover:text-red-500 transition"><X size={14} /></button>
                   </span>
                 ))}
               </div>
@@ -518,16 +444,13 @@ export default function Editor() {
                   value={tagInput}
                   onChange={(e) => setTagInput(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddTag())}
-                  placeholder="输入标签后按回车添加"
+                  placeholder={formData.tags.length >= 5 ? '最多5个标签' : '输入标签后按回车添加'}
                   maxLength={30}
-                  className="flex-1 px-4 py-2 border border-gray-200 dark:border-gray-600 rounded-xl focus:outline-none focus:border-primary"
                   disabled={formData.tags.length >= 5}
+                  className="flex-1 px-4 py-2 border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-xl focus:outline-none focus:border-primary text-sm disabled:opacity-50"
                 />
-                <button
-                  type="button"
-                  onClick={handleAddTag}
-                  className="px-4 py-2 bg-gray-100 dark:bg-gray-700 rounded-xl hover:bg-gray-200 dark:hover:bg-gray-600 transition"
-                >
+                <button type="button" onClick={handleAddTag} disabled={formData.tags.length >= 5}
+                  className="px-4 py-2 bg-gray-100 dark:bg-gray-700 text-sm rounded-xl hover:bg-gray-200 dark:hover:bg-gray-600 transition disabled:opacity-50">
                   添加
                 </button>
               </div>
@@ -536,80 +459,150 @@ export default function Editor() {
                 const catTags = (TAG_CATEGORY_MAP[formData.category] || []).filter(t => !formData.tags.includes(t))
                 const otherTags = allTags.filter(t => !catTags.includes(t))
                 const suggested = [...catTags, ...otherTags].slice(0, 30)
-                return (
-                <div className="mt-2 flex flex-wrap gap-1.5">
-                  <span className="text-xs text-gray-400 dark:text-gray-500 mr-1 self-center">常用:</span>
-                  {suggested.map(tag => (
-                    <button
-                      key={tag}
-                      type="button"
-                      onClick={() => handleChange({ tags: [...formData.tags, tag] })}
-                      className="px-2 py-0.5 text-xs bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-full hover:bg-primary/20 hover:text-primary transition"
-                    >
-                      {tag}
-                    </button>
-                  ))}
-                </div>
-                )})()}
+                return suggested.length > 0 ? (
+                  <div className="mt-3 flex flex-wrap gap-1.5">
+                    <span className="text-xs text-gray-400 mr-1 self-center">推荐:</span>
+                    {suggested.map(tag => (
+                      <button key={tag} type="button"
+                        onClick={() => handleChange({ tags: [...formData.tags, tag] })}
+                        className="px-2.5 py-1 text-xs bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-full hover:bg-primary/15 hover:text-primary transition">
+                        {tag}
+                      </button>
+                    ))}
+                  </div>
+                ) : null
+              })()}
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">摘要（可选）</label>
-              <textarea
-                value={formData.excerpt}
-                onChange={(e) => handleChange({ excerpt: e.target.value })}
-                placeholder="简要描述文章内容..."
-                maxLength={500}
-                className="w-full px-4 py-2 border border-gray-200 dark:border-gray-600 rounded-xl focus:outline-none focus:border-primary resize-none"
-                rows={2}
-              />
-              <p className="text-xs text-gray-400 dark:text-gray-500 mt-1 text-right">{formData.excerpt.length}/500</p>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 dark:text-gray-300 mb-2">内容（支持 Markdown）</label>
-              <div className="border border-gray-200 dark:border-gray-600 rounded-xl overflow-hidden">
-                <div className="bg-gray-50 dark:bg-gray-800 px-2 py-1.5 border-b border-gray-200 dark:border-gray-600 flex items-center gap-1 flex-wrap">
-                  <button type="button" onMouseDown={(e) => { e.preventDefault(); insertMarkdown('# ', '') }} className="p-1.5 hover:bg-gray-200 dark:hover:bg-gray-700 rounded select-none" title="标题"><Heading size={16} /></button>
-                  <button type="button" onMouseDown={(e) => { e.preventDefault(); insertMarkdown('**', '**') }} className="p-1.5 hover:bg-gray-200 dark:hover:bg-gray-700 rounded font-bold select-none" title="粗体"><Bold size={16} /></button>
-                  <button type="button" onMouseDown={(e) => { e.preventDefault(); insertMarkdown('*', '*') }} className="p-1.5 hover:bg-gray-200 dark:hover:bg-gray-700 rounded italic select-none" title="斜体"><Italic size={16} /></button>
-                  <button type="button" onMouseDown={(e) => { e.preventDefault(); insertMarkdown('`', '`') }} className="p-1.5 hover:bg-gray-200 dark:hover:bg-gray-700 rounded select-none" title="行内代码"><Code size={16} /></button>
-                  <button type="button" onClick={handleContentImage} className="p-1.5 hover:bg-gray-200 dark:hover:bg-gray-700 rounded select-none text-primary" title="插入图片"><Image size={16} /></button>
-                  <button type="button" onMouseDown={(e) => { e.preventDefault(); insertMarkdown('> ', '') }} className="p-1.5 hover:bg-gray-200 dark:hover:bg-gray-700 rounded select-none" title="引用"><Quote size={16} /></button>
-                  <button type="button" onMouseDown={(e) => { e.preventDefault(); insertMarkdown('- ', '') }} className="p-1.5 hover:bg-gray-200 dark:hover:bg-gray-700 rounded select-none" title="列表"><List size={16} /></button>
-                  <button type="button" onMouseDown={(e) => { e.preventDefault(); insertMarkdown('[', '](url)') }} className="p-1.5 hover:bg-gray-200 dark:hover:bg-gray-700 rounded select-none" title="链接"><span className="text-xs font-mono">A</span></button>
-                  <span className="text-xs text-gray-400 dark:text-gray-500 dark:text-gray-500 ml-2">点击按钮插入格式，支持选中文本</span>
-                </div>
-                <div className={`${splitView ? 'flex flex-col md:flex-row' : ''}`}>
-                  <textarea
-                    ref={textareaRef}
-                    value={formData.content}
-                    onChange={(e) => handleChange({ content: e.target.value })}
-                    placeholder="开始写作..."
-                    maxLength={100000}
-                    className={`${splitView ? 'w-full md:w-1/2 md:border-r border-b md:border-b-0 border-gray-200 dark:border-gray-600' : 'w-full'} h-96 p-4 focus:outline-none resize-none font-mono bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100`}
-                  />
-                  {splitView && (
-                    <div
-                      className="w-full md:w-1/2 h-96 p-4 overflow-y-auto prose bg-gray-50 dark:bg-gray-800"
-                      dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(parseMarkdown(formData.content)) || '<p class="text-gray-400 dark:text-gray-500">预览将在此显示...</p>' }}
-                      onClick={(e) => {
-                        const img = e.target.closest('img')
-                        if (!img) return
-                        const link = img.closest('a')
-                        const src = link?.href || img.src
-                        if (src && src.startsWith('http')) {
-                          e.preventDefault()
-                          setPreviewLightbox(src)
-                        }
-                      }}
-                    />
+            {/* Article settings - collapsible */}
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm overflow-hidden">
+              <button type="button"
+                onClick={() => setMetaOpen(!metaOpen)}
+                className="w-full px-6 py-4 flex items-center justify-between text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-700/50 transition">
+                <span className="flex items-center gap-2">
+                  <span className="text-base">⚙️</span> 文章设置
+                  {(formData.coverImage || formData.excerpt || formData.scheduledAt) && (
+                    <span className="w-1.5 h-1.5 rounded-full bg-primary" />
                   )}
+                </span>
+                {metaOpen ? <ChevronUp size={18} className="text-gray-400" /> : <ChevronDown size={18} className="text-gray-400" />}
+              </button>
+              {metaOpen && (
+                <div className="px-6 pb-6 space-y-4 border-t border-gray-100 dark:border-gray-700 pt-5 animate-slide-up">
+                  <div className="grid sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5">URL Slug</label>
+                      <input type="text" value={formData.slug || ''}
+                        onChange={(e) => handleChange({ slug: e.target.value })}
+                        placeholder="自动生成" maxLength={200}
+                        className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:outline-none focus:border-primary text-sm" />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5">分类</label>
+                      <select value={formData.category}
+                        onChange={(e) => handleChange({ category: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:outline-none focus:border-primary text-sm">
+                        {categoryOptions.map(opt => (
+                          <option key={opt.value} value={opt.value}>{opt.label}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5">定时发布</label>
+                      <input type="datetime-local" value={formData.scheduledAt}
+                        onChange={(e) => handleChange({ scheduledAt: e.target.value })}
+                        min={new Date().toISOString().slice(0, 16)}
+                        className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:outline-none focus:border-primary text-sm" />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5">封面图</label>
+                      <div className="flex gap-2">
+                        <input type="text" value={formData.coverImage}
+                          onChange={(e) => handleChange({ coverImage: e.target.value })}
+                          placeholder="图片URL或点击上传" maxLength={2000}
+                          className="flex-1 px-3 py-2 border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:outline-none focus:border-primary text-sm" />
+                        <label className={`flex items-center justify-center w-10 h-10 rounded-lg cursor-pointer transition shrink-0 ${imageUploading ? 'bg-gray-200 dark:bg-gray-600' : 'bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600'}`}>
+                          {imageUploading ? <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" /> : <Image size={18} className="text-gray-500" />}
+                          <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" disabled={imageUploading} />
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5">摘要</label>
+                    <textarea value={formData.excerpt}
+                      onChange={(e) => handleChange({ excerpt: e.target.value })}
+                      placeholder="简要描述文章内容，留空则自动生成..." maxLength={500} rows={2}
+                      className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:outline-none focus:border-primary text-sm resize-none" />
+                    <p className="text-xs text-gray-400 mt-1 text-right">{formData.excerpt.length}/500</p>
+                  </div>
                 </div>
+              )}
+            </div>
+
+            {/* Content editor */}
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm overflow-hidden">
+              {/* Toolbar */}
+              <div className="flex items-center gap-0.5 px-3 py-2 border-b border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50 overflow-x-auto">
+                <div className="flex items-center gap-0.5">
+                  <ToolBtn icon={<Heading size={16} />} label="标题 (H1)" onAction={() => insertMarkdown('# ', '')} />
+                  <ToolBtn icon={<span className="text-xs font-bold">H2</span>} label="二级标题" onAction={() => insertMarkdown('## ', '')} />
+                  <ToolBtn icon={<span className="text-xs font-bold">H3</span>} label="三级标题" onAction={() => insertMarkdown('### ', '')} />
+                </div>
+                <span className="w-px h-5 bg-gray-200 dark:bg-gray-600 mx-1.5" />
+                <div className="flex items-center gap-0.5">
+                  <ToolBtn icon={<Bold size={16} />} label="粗体 (Ctrl+B)" onAction={() => insertMarkdown('**', '**')} />
+                  <ToolBtn icon={<Italic size={16} />} label="斜体 (Ctrl+I)" onAction={() => insertMarkdown('*', '*')} />
+                  <ToolBtn icon={<Code size={16} />} label="行内代码" onAction={() => insertMarkdown('`', '`')} />
+                </div>
+                <span className="w-px h-5 bg-gray-200 dark:bg-gray-600 mx-1.5" />
+                <div className="flex items-center gap-0.5">
+                  <ToolBtn icon={<Quote size={16} />} label="引用" onAction={() => insertMarkdown('> ', '')} />
+                  <ToolBtn icon={<List size={16} />} label="无序列表" onAction={() => insertMarkdown('- ', '')} />
+                  <ToolBtn icon={<LinkIcon size={16} />} label="链接" onAction={() => insertMarkdown('[', '](url)')} />
+                </div>
+                <span className="w-px h-5 bg-gray-200 dark:bg-gray-600 mx-1.5" />
+                <ToolBtn icon={<Image size={16} />} label="插入图片" onAction={handleContentImage} primary />
+                <span className="text-xs text-gray-400 dark:text-gray-500 ml-2 hidden sm:inline">选中文本后点击按钮包裹格式</span>
               </div>
-              <p className="text-xs text-gray-400 dark:text-gray-500 mt-1 text-right">{formData.content.length}/100,000</p>
+
+              {/* Editor area */}
+              <div className={`${splitView ? 'flex flex-col md:flex-row' : ''}`}>
+                <textarea
+                  ref={textareaRef}
+                  value={formData.content}
+                  onChange={(e) => handleChange({ content: e.target.value })}
+                  placeholder="开始写作..."
+                  maxLength={100000}
+                  className={`${splitView ? 'w-full md:w-1/2 md:border-r border-gray-100 dark:border-gray-700' : 'w-full'} h-[500px] p-5 focus:outline-none resize-none font-mono text-sm bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 placeholder:text-gray-300 dark:placeholder:text-gray-600 leading-relaxed`}
+                />
+                {splitView && (
+                  <div
+                    className="w-full md:w-1/2 h-[500px] p-5 overflow-y-auto prose dark:text-gray-300 bg-gray-50 dark:bg-gray-800"
+                    dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(parseMarkdown(formData.content)) || '<p class="text-gray-400">预览将在此显示...</p>' }}
+                    onClick={(e) => {
+                      const img = e.target.closest('img')
+                      if (!img) return
+                      const link = img.closest('a')
+                      const src = link?.href || img.src
+                      if (src?.startsWith('http')) { e.preventDefault(); setPreviewLightbox(src) }
+                    }}
+                  />
+                )}
+              </div>
+              <div className="px-5 py-2 border-t border-gray-100 dark:border-gray-700 flex items-center justify-between">
+                <span className="text-xs text-gray-400">支持 Markdown 语法</span>
+                <span className="text-xs text-gray-400">{formData.content.length.toLocaleString()}/100,000</span>
+              </div>
             </div>
           </form>
+        )}
+
+        {/* Preview lightbox */}
+        {previewLightbox && (
+          <div className="lightbox-overlay" onClick={() => setPreviewLightbox(null)}>
+            <img src={previewLightbox} alt="" onClick={(e) => e.stopPropagation()} />
+          </div>
         )}
       </div>
     </div>
