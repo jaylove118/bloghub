@@ -172,10 +172,13 @@ router.post('/', authRequired, postValidation, async (req, res, next) => {
     const post = parseJsonFields(rows[0])
     res.status(201).json({ post })
 
-    // Fire-and-forget: notify verified subscribers about new published post
+    // Fire-and-forget: notify verified subscribers about new published post (exclude author)
     if (status !== 'draft') {
       const authorName = rows[0].author_name || '未知作者'
-      pool.query('SELECT email FROM subscribers WHERE is_verified = 1')
+      pool.query(
+        'SELECT s.email FROM subscribers s WHERE s.is_verified = 1 AND s.email != (SELECT u.email FROM users u WHERE u.id = ?)',
+        [req.userId]
+      )
         .then(([subs]) => {
           subs.forEach(s => {
             sendNewPostNotification(s.email, title, excerpt, finalSlug, authorName).catch(() => {})
@@ -228,10 +231,13 @@ router.put('/:id', authRequired, postValidation, async (req, res, next) => {
     const post = parseJsonFields(rows[0])
     res.json({ post })
 
-    // Notify subscribers when draft is published for the first time
+    // Notify subscribers when draft is published (exclude author)
     if (existing[0].status === 'draft' && newStatus === 'published') {
       const authorName = rows[0].author_name || '未知作者'
-      pool.query('SELECT email FROM subscribers WHERE is_verified = 1')
+      pool.query(
+        'SELECT s.email FROM subscribers s WHERE s.is_verified = 1 AND s.email != (SELECT u.email FROM users u WHERE u.id = ?)',
+        [req.userId]
+      )
         .then(([subs]) => {
           subs.forEach(s => {
             sendNewPostNotification(s.email, title, excerpt, newSlug, authorName).catch(() => {})
