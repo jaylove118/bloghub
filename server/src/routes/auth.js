@@ -6,7 +6,7 @@ import pool from '../config/db.js'
 import { authRequired } from '../middleware/auth.js'
 import { validate } from '../middleware/validate.js'
 import { AppError } from '../utils/errors.js'
-import { sendVerificationEmail, sendPasswordResetEmail } from '../utils/email.js'
+import { sendVerificationEmail, sendPasswordResetEmail, sendVerificationCode } from '../utils/email.js'
 
 const router = Router()
 
@@ -16,9 +16,49 @@ const registerValidation = validate({
   password: { required: true, min: 6, max: 128 },
 })
 
+// 发送邮箱验证码
+router.post('/send-verify-code', async (req, res, next) => {
+  try {
+    const { email } = req.body
+    if (!email) throw new AppError(400, '请输入邮箱')
+
+    // Check rate limit: 60 seconds
+    const [recent] = await pool.query(
+      'SELECT id FROM email_verifications WHERE email = ? AND created_at > DATE_SUB(NOW(), INTERVAL 60 SECOND)',
+      [email]
+    )
+    if (recent.length > 0) throw new AppError(429, '请60秒后再试')
+
+    // Check for existing verified user
+    const [existing] = await pool.query('SELECT id FROM users WHERE email = ? AND email_verified = 1', [email])
+    if (existing.length > 0) throw new AppError(400, '该邮箱已被注册')
+
+    const code = String(Math.floor(100000 + Math.random() * 900000))
+    await pool.query(
+      'INSERT INTO email_verifications (email, code, expires_at) VALUES (?, ?, DATE_ADD(NOW(), INTERVAL 10 MINUTE))',
+      [email, code]
+    )
+
+    const sent = await sendVerificationCode(email, code)
+    if (!sent) throw new AppError(500, '验证码发送失败，请稍后重试')
+
+    res.json({ message: '验证码已发送' })
+  } catch (err) {
+    next(err)
+  }
+})
+
 router.post('/register', registerValidation, async (req, res, next) => {
   try {
-    const { username, email, password, avatar } = req.body
+    const { username, email, password, avatar, verifyCode } = req.body
+
+    // Verify code
+    if (!verifyCode) throw new AppError(400, '请输入邮箱验证码')
+    const [codes] = await pool.query(
+      'SELECT id FROM email_verifications WHERE email = ? AND code = ? AND expires_at > NOW()',
+      [email, verifyCode]
+    )
+    if (codes.length === 0) throw new AppError(400, '验证码错误或已过期')
 
     const [existing] = await pool.query('SELECT id FROM users WHERE email = ?', [email])
     if (existing.length > 0) {
@@ -26,22 +66,23 @@ router.post('/register', registerValidation, async (req, res, next) => {
     }
 
     const hashedPassword = await bcrypt.hash(password, 10)
-    const verifyToken = crypto.randomBytes(32).toString('hex')
     const [result] = await pool.query(
-      'INSERT INTO users (username, email, password, avatar, verify_token) VALUES (?, ?, ?, ?, ?)',
-      [username, email, hashedPassword, avatar || '', verifyToken]
+      'INSERT INTO users (username, email, password, avatar, email_verified) VALUES (?, ?, ?, ?, ?)',
+      [username, email, hashedPassword, avatar || '', 1]
     )
 
+    // Delete used verification code
+    await pool.query('DELETE FROM email_verifications WHERE email = ?', [email])
+
     const userId = result.insertId
+    const token = jwt.sign({ userId }, process.env.JWT_SECRET, { expiresIn: '7d' })
 
-    // Send verification email
-    const sent = await sendVerificationEmail(email, verifyToken)
-    if (!sent) {
-      await pool.query('DELETE FROM users WHERE id = ?', [userId])
-      throw new AppError(500, '验证邮件发送失败，请稍后重试')
-    }
+    const [users] = await pool.query(
+      'SELECT id, username, email, avatar, bio, github, email_verified, created_at FROM users WHERE id = ?',
+      [userId]
+    )
 
-    res.status(201).json({ message: '验证邮件已发送，请检查邮箱完成验证' })
+    res.status(201).json({ user: users[0], token })
   } catch (err) {
     next(err)
   }
@@ -62,9 +103,6 @@ router.post('/login', loginValidation, async (req, res, next) => {
     }
 
     const user = users[0]
-    if (!user.email_verified) {
-      throw new AppError(403, '请先验证邮箱后再登录')
-    }
     const valid = await bcrypt.compare(password, user.password)
     if (!valid) {
       throw new AppError(401, '邮箱或密码错误')
@@ -160,11 +198,43 @@ router.put('/password', authRequired, async (req, res, next) => {
   }
 })
 
+// 发送重置密码验证码
+router.post('/send-reset-code', async (req, res, next) => {
+  try {
+    const { email } = req.body
+    if (!email) throw new AppError(400, '请输入邮箱')
+
+    // Check rate limit
+    const [recent] = await pool.query(
+      'SELECT id FROM email_verifications WHERE email = ? AND created_at > DATE_SUB(NOW(), INTERVAL 60 SECOND)',
+      [email]
+    )
+    if (recent.length > 0) throw new AppError(429, '请60秒后再试')
+
+    // Check if email exists
+    const [users] = await pool.query('SELECT id FROM users WHERE email = ?', [email])
+    if (users.length === 0) throw new AppError(404, '该邮箱未注册')
+
+    const code = String(Math.floor(100000 + Math.random() * 900000))
+    await pool.query(
+      'INSERT INTO email_verifications (email, code, expires_at) VALUES (?, ?, DATE_ADD(NOW(), INTERVAL 10 MINUTE))',
+      [email, code]
+    )
+
+    const sent = await sendVerificationCode(email, code)
+    if (!sent) throw new AppError(500, '验证码发送失败，请稍后重试')
+
+    res.json({ message: '验证码已发送' })
+  } catch (err) {
+    next(err)
+  }
+})
+
 router.post('/forgot-password', async (req, res, next) => {
   try {
-    const { email, username, newPassword, token } = req.body
+    const { email, code, newPassword, token } = req.body
 
-    // Token-based reset (from email link)
+    // Token-based reset (from email link) - keep for backward compatibility
     if (token) {
       if (!newPassword || newPassword.length < 6) {
         throw new AppError(400, '新密码至少需要6个字符')
@@ -181,29 +251,27 @@ router.post('/forgot-password', async (req, res, next) => {
       return res.json({ success: true, message: '密码重置成功' })
     }
 
-    // Step 1: Generate reset token and send email
-    if (!email || !username) {
-      throw new AppError(400, '请填写邮箱和用户名')
+    // Code-based reset (new flow)
+    if (code) {
+      if (!email) throw new AppError(400, '请输入邮箱')
+      if (!newPassword || newPassword.length < 6) {
+        throw new AppError(400, '新密码至少需要6个字符')
+      }
+
+      const [codes] = await pool.query(
+        'SELECT id FROM email_verifications WHERE email = ? AND code = ? AND expires_at > NOW()',
+        [email, code]
+      )
+      if (codes.length === 0) throw new AppError(400, '验证码错误或已过期')
+
+      const hashed = await bcrypt.hash(newPassword, 10)
+      await pool.query('UPDATE users SET password = ? WHERE email = ?', [hashed, email])
+      await pool.query('DELETE FROM email_verifications WHERE email = ?', [email])
+
+      return res.json({ success: true, message: '密码重置成功' })
     }
 
-    const [users] = await pool.query(
-      'SELECT id, email FROM users WHERE email = ? AND username = ?',
-      [email, username]
-    )
-    if (users.length === 0) {
-      throw new AppError(404, '邮箱与用户名不匹配')
-    }
-
-    const resetToken = crypto.randomBytes(32).toString('hex')
-    await pool.query(
-      'UPDATE users SET reset_token = ?, reset_token_expires = DATE_ADD(NOW(), INTERVAL 1 HOUR) WHERE id = ?',
-      [resetToken, users[0].id]
-    )
-
-    // Send reset email (non-blocking)
-    sendPasswordResetEmail(users[0].email, resetToken).catch(() => {})
-
-    res.json({ success: true, message: '重置链接已发送到邮箱' })
+    throw new AppError(400, '请提供验证码')
   } catch (err) {
     next(err)
   }

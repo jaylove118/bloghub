@@ -1,22 +1,76 @@
 import { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
-import { User, Mail, Lock, Eye, EyeOff, ArrowRight, CheckCircle } from 'lucide-react'
+import { Link, useNavigate } from 'react-router-dom'
+import { useAuth } from '../context/AuthContext'
+import { User, Mail, Lock, Eye, EyeOff, ArrowRight, Upload, X } from 'lucide-react'
 import { avatarTypes } from '../utils/constants'
 import { api } from '../context/api'
 
 export default function Register() {
   useEffect(() => { document.title = '注册 - BlogHub' }, [])
+  const { register } = useAuth()
+  const navigate = useNavigate()
   const [formData, setFormData] = useState({
     username: '',
     email: '',
     password: '',
     confirmPassword: '',
-    avatar: ''
+    avatar: '',
+    verifyCode: ''
   })
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
-  const [registered, setRegistered] = useState(false)
+  const [codeSending, setCodeSending] = useState(false)
+  const [countdown, setCountdown] = useState(0)
+  const [avatarUploading, setAvatarUploading] = useState(false)
+  const [customAvatar, setCustomAvatar] = useState(null)
+
+  const handleAvatarUpload = async (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (file.size > 2 * 1024 * 1024) {
+      setError('头像图片不能超过2MB')
+      return
+    }
+    setError('')
+    setAvatarUploading(true)
+    try {
+      const formData = new FormData()
+      formData.append('avatar', file)
+      const res = await fetch('/api/upload/avatar', { method: 'POST', body: formData })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.message)
+      setCustomAvatar(data.url)
+      setFormData(prev => ({ ...prev, avatar: data.url }))
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setAvatarUploading(false)
+    }
+  }
+
+  const sendVerifyCode = async () => {
+    if (!formData.email) {
+      setError('请先输入邮箱')
+      return
+    }
+    setError('')
+    setCodeSending(true)
+    try {
+      await api.auth.sendVerifyCode(formData.email)
+      setCountdown(60)
+      const timer = setInterval(() => {
+        setCountdown(prev => {
+          if (prev <= 1) { clearInterval(timer); return 0 }
+          return prev - 1
+        })
+      }, 1000)
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setCodeSending(false)
+    }
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -34,37 +88,21 @@ export default function Register() {
 
     setLoading(true)
     try {
-      const avatarUrl = `https://api.dicebear.com/7.x/${formData.avatar || 'avataaars'}/svg?seed=${formData.username}`
-      const res = await api.auth.register({
+      const avatarUrl = customAvatar || `https://api.dicebear.com/7.x/${formData.avatar || 'avataaars'}/svg?seed=${formData.username}`
+      await register({
         username: formData.username,
         email: formData.email,
         password: formData.password,
         avatar: avatarUrl,
         bio: '',
+        verifyCode: formData.verifyCode,
       })
-      if (res.message) {
-        setRegistered(true)
-      }
+      navigate('/')
     } catch (err) {
       setError(err.message)
     } finally {
       setLoading(false)
     }
-  }
-
-  if (registered) {
-    return (
-      <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center px-4 py-8">
-        <div className="w-full max-w-md text-center">
-          <CheckCircle size={64} className="mx-auto text-green-500 mb-4" />
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">注册成功！</h2>
-          <p className="text-gray-600 dark:text-gray-400 mb-6">
-            验证邮件已发送至 <strong>{formData.email}</strong>，请点击邮件中的链接完成验证后再登录。
-          </p>
-          <Link to="/login" className="text-primary font-medium hover:underline">前往登录</Link>
-        </div>
-      </div>
-    )
   }
 
   return (
@@ -101,18 +139,41 @@ export default function Register() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">邮箱</label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500" size={20} />
-                <input
-                  type="email"
-                  required
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-xl focus:outline-none focus:border-primary transition"
-                  placeholder="your@email.com"
-                  maxLength={100}
-                />
+              <div className="flex gap-2">
+                <div className="relative flex-1">
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500" size={20} />
+                  <input
+                    type="email"
+                    required
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    className="w-full pl-10 pr-4 py-3 border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-xl focus:outline-none focus:border-primary transition"
+                    placeholder="your@email.com"
+                    maxLength={100}
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={sendVerifyCode}
+                  disabled={countdown > 0 || codeSending}
+                  className="px-4 py-3 bg-primary text-white text-sm font-medium rounded-xl hover:bg-secondary transition disabled:opacity-50 whitespace-nowrap"
+                >
+                  {codeSending ? '发送中...' : countdown > 0 ? `${countdown}s` : '发送验证码'}
+                </button>
               </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">验证码</label>
+              <input
+                type="text"
+                required
+                value={formData.verifyCode}
+                onChange={(e) => setFormData({ ...formData, verifyCode: e.target.value })}
+                className="w-full px-4 py-3 border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-xl focus:outline-none focus:border-primary transition"
+                placeholder="请输入邮箱收到的6位验证码"
+                maxLength={6}
+              />
             </div>
 
             <div>
@@ -155,14 +216,44 @@ export default function Register() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">选择头像</label>
+              {/* Preview */}
+              <div className="flex items-center gap-4 mb-3">
+                <div className="w-16 h-16 rounded-full overflow-hidden bg-gray-100 dark:bg-gray-700 border-2 border-gray-200 dark:border-gray-600">
+                  {customAvatar ? (
+                    <img src={customAvatar} alt="头像预览" className="w-full h-full object-cover" />
+                  ) : formData.avatar ? (
+                    <img src={`https://api.dicebear.com/7.x/${formData.avatar}/svg?seed=${formData.username || 'user'}`} alt="头像预览" className="w-full h-full" />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-gray-400"><User size={28} /></div>
+                  )}
+                </div>
+                <div>
+                  <label className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-primary bg-blue-50 dark:bg-blue-900/20 rounded-lg cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/30 transition">
+                    <Upload size={14} />
+                    {avatarUploading ? '上传中...' : '上传图片'}
+                    <input type="file" accept="image/*" onChange={handleAvatarUpload} disabled={avatarUploading} className="hidden" />
+                  </label>
+                  {customAvatar && (
+                    <button
+                      type="button"
+                      onClick={() => { setCustomAvatar(null); setFormData({ ...formData, avatar: '' }) }}
+                      className="ml-2 text-xs text-gray-400 hover:text-error transition"
+                    >
+                      <X size={14} className="inline" /> 清除
+                    </button>
+                  )}
+                  <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">或从下方选择风格</p>
+                </div>
+              </div>
+              {/* DiceBear grid */}
               <div className="grid grid-cols-8 gap-2">
                 {avatarTypes.slice(0, 16).map((type) => (
                   <button
                     key={type}
                     type="button"
-                    onClick={() => setFormData({ ...formData, avatar: type })}
+                    onClick={() => { setCustomAvatar(null); setFormData({ ...formData, avatar: type }) }}
                     className={`w-10 h-10 rounded-lg overflow-hidden border-2 transition ${
-                      formData.avatar === type ? 'border-primary' : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500'
+                      !customAvatar && formData.avatar === type ? 'border-primary ring-2 ring-primary/30' : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500'
                     }`}
                   >
                     <img

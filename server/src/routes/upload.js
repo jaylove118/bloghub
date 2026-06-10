@@ -27,6 +27,34 @@ const upload = multer({
 
 const router = Router()
 
+// Public avatar upload (for registration)
+const avatarUpload = multer({
+  storage,
+  limits: { fileSize: 2 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    const allowed = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
+    cb(null, allowed.includes(file.mimetype))
+  },
+})
+
+router.post('/avatar', avatarUpload.single('avatar'), async (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ message: '请选择图片文件' })
+  }
+  let url = `/uploads/${req.file.filename}`
+  try {
+    const sharp = (await import('sharp')).default
+    const ext = extname(req.file.filename)
+    const base = req.file.filename.replace(ext, '')
+    await sharp(req.file.path)
+      .resize(300, 300, { fit: 'cover' })
+      .webp({ quality: 80 })
+      .toFile(join(uploadsDir, base + '_thumb.webp'))
+    url = `/uploads/${base}_thumb.webp`
+  } catch {}
+  res.json({ url })
+})
+
 router.get('/', authRequired, (_req, res) => {
   try {
     if (!existsSync(uploadsDir)) return res.json({ images: [] })

@@ -67,12 +67,14 @@ export default function Editor() {
     if (!ta) return
     const start = ta.selectionStart
     const end = ta.selectionEnd
-    const selected = formData.content.substring(start, end)
-    const newText = formData.content.substring(0, start) + prefix + selected + suffix + formData.content.substring(end)
+    const content = formDataRef.current.content
+    const selected = content.substring(start, end)
+    const newText = content.substring(0, start) + prefix + selected + suffix + content.substring(end)
     handleChange({ content: newText })
     setTimeout(() => {
       ta.focus()
-      ta.selectionStart = ta.selectionEnd = start + prefix.length + selected.length + suffix.length
+      const pos = start + prefix.length + selected.length + suffix.length
+      ta.setSelectionRange(pos, pos)
     }, 0)
   }
 

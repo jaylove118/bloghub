@@ -139,6 +139,13 @@ export const api = {
         body: JSON.stringify({ oldPassword, newPassword }),
       })
     },
+
+    async sendVerifyCode(email) {
+      return await request('/auth/send-verify-code', {
+        method: 'POST',
+        body: JSON.stringify({ email }),
+      })
+    },
   },
 
   posts: {

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { api } from '../context/api'
-import { User, Mail, Lock, Save, ArrowLeft, Key } from 'lucide-react'
+import { User, Mail, Lock, Save, ArrowLeft, Key, Upload, X } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { avatarTypes } from '../utils/constants'
 import { handleError } from '../utils/errors'
@@ -25,6 +25,32 @@ export default function Settings() {
   const [pwLoading, setPwLoading] = useState(false)
   const [pwError, setPwError] = useState('')
   const [pwSuccess, setPwSuccess] = useState(false)
+  const [avatarUploading, setAvatarUploading] = useState(false)
+  const [customAvatar, setCustomAvatar] = useState(null)
+
+  const handleAvatarUpload = async (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (file.size > 2 * 1024 * 1024) {
+      setError('头像图片不能超过2MB')
+      return
+    }
+    setError(null)
+    setAvatarUploading(true)
+    try {
+      const fd = new FormData()
+      fd.append('avatar', file)
+      const res = await fetch('/api/upload/avatar', { method: 'POST', body: fd })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.message)
+      setCustomAvatar(true)
+      setFormData({ ...formData, avatar: data.url, avatarType: '' })
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setAvatarUploading(false)
+    }
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -153,28 +179,39 @@ export default function Settings() {
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">头像</label>
             <div className="flex items-center gap-4 mb-3">
-              <img
-                src={formData.avatar || `https://api.dicebear.com/7.x/${formData.avatarType}/svg?seed=${formData.username}`}
-                alt="avatar preview"
-                className="w-20 h-20 rounded-full bg-gray-100 dark:bg-gray-700"
-              />
-              <input
-                type="text"
-                value={formData.avatar}
-                onChange={(e) => setFormData({ ...formData, avatar: e.target.value, avatarType: '' })}
-                maxLength={2000}
-                className="flex-1 px-4 py-2 border border-gray-200 dark:border-gray-600 rounded-xl focus:outline-none focus:border-primary transition"
-                placeholder="或输入头像图片URL"
-              />
+              <div className="w-20 h-20 rounded-full overflow-hidden bg-gray-100 dark:bg-gray-700 border-2 border-gray-200 dark:border-gray-600 shrink-0">
+                <img
+                  src={formData.avatar || `https://api.dicebear.com/7.x/${formData.avatarType}/svg?seed=${formData.username}`}
+                  alt="头像预览"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <div>
+                <label className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-primary bg-blue-50 dark:bg-blue-900/20 rounded-lg cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/30 transition">
+                  <Upload size={14} />
+                  {avatarUploading ? '上传中...' : '上传图片'}
+                  <input type="file" accept="image/*" onChange={handleAvatarUpload} disabled={avatarUploading} className="hidden" />
+                </label>
+                {customAvatar && (
+                  <button
+                    type="button"
+                    onClick={() => { setCustomAvatar(false); setFormData({ ...formData, avatar: '' }) }}
+                    className="ml-2 text-xs text-gray-400 hover:text-error transition"
+                  >
+                    <X size={14} className="inline" /> 清除
+                  </button>
+                )}
+                <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">或从下方选择风格</p>
+              </div>
             </div>
             <div className="grid grid-cols-8 gap-2">
               {avatarTypes.slice(0, 16).map((type) => (
                 <button
                   key={type}
                   type="button"
-                  onClick={() => setFormData({ ...formData, avatar: '', avatarType: type })}
+                  onClick={() => { setCustomAvatar(false); setFormData({ ...formData, avatar: '', avatarType: type }) }}
                   className={`w-10 h-10 rounded-lg overflow-hidden border-2 transition ${
-                    formData.avatarType === type && !formData.avatar ? 'border-primary' : 'border-gray-200 dark:border-gray-600 hover:border-gray-300'
+                    !customAvatar && formData.avatarType === type && !formData.avatar ? 'border-primary ring-2 ring-primary/30' : 'border-gray-200 dark:border-gray-600 hover:border-gray-300'
                   }`}
                 >
                   <img
