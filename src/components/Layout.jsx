@@ -6,6 +6,7 @@ import { categoryMap, TAG_WHITELIST, POPULAR_TAGS } from '../utils/constants'
 import { useTheme } from '../context/ThemeContext'
 import { api } from '../context/api'
 import NotificationBell from './NotificationBell'
+import SubscribeForm from './SubscribeForm'
 
 export default function Layout() {
   const { user, isAuthenticated, logout } = useAuth()
@@ -256,6 +257,29 @@ export default function Layout() {
           <Outlet />
         </main>
       </div>
+
+      <footer className="bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 mt-auto">
+        <div className="max-w-7xl mx-auto px-4 py-8">
+          <div className="grid md:grid-cols-3 gap-8">
+            <div>
+              <h3 className="text-xl font-bold text-primary mb-2">BlogHub</h3>
+              <p className="text-sm text-gray-500 dark:text-gray-400">全功能博客平台 — 分享想法，连接读者</p>
+            </div>
+            <div>
+              <h4 className="font-semibold mb-2">快速链接</h4>
+              <div className="space-y-1 text-sm text-gray-500 dark:text-gray-400">
+                <div><Link to="/" className="hover:text-primary transition">首页</Link></div>
+                <div><Link to="/blogs" className="hover:text-primary transition">博客</Link></div>
+                <div><Link to="/about" className="hover:text-primary transition">关于</Link></div>
+              </div>
+            </div>
+            <SubscribeForm variant="footer" />
+          </div>
+          <div className="mt-8 pt-6 border-t border-gray-100 dark:border-gray-800 text-center text-sm text-gray-400">
+            &copy; {new Date().getFullYear()} BlogHub. All rights reserved.
+          </div>
+        </div>
+      </footer>
     </div>
   )
 }

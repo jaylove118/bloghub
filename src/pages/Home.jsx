@@ -6,6 +6,7 @@ import { Heart, MessageCircle, Eye, Clock, TrendingUp, Sparkles, Pin } from 'luc
 import { categoryMap, formatDate } from '../utils/constants'
 import LoadingSpinner from '../components/LoadingSpinner'
 import CoverPlaceholder from '../components/CoverPlaceholder'
+import SubscribeForm from '../components/SubscribeForm'
 import { useSEO } from '../hooks/useSEO'
 
 export default function Home() {
@@ -294,6 +295,10 @@ export default function Home() {
           <h3 className="font-bold mb-2">精美主题</h3>
           <p className="text-sm text-gray-600 dark:text-gray-400">响应式设计，适配所有设备</p>
         </div>
+      </section>
+
+      <section className="mt-12">
+        <SubscribeForm />
       </section>
     </div>
   )
