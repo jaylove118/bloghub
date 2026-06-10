@@ -61,12 +61,21 @@ export default function Editor() {
   const textareaRef = useRef(null)
   const formDataRef = useRef(formData)
   formDataRef.current = formData
+  const savedSelection = useRef([0, 0])
+
+  useEffect(() => {
+    const ta = textareaRef.current
+    if (!ta) return
+    const onBlur = () => { savedSelection.current = [ta.selectionStart, ta.selectionEnd] }
+    ta.addEventListener('blur', onBlur)
+    return () => ta.removeEventListener('blur', onBlur)
+  }, [])
 
   const insertMarkdown = (prefix, suffix = '') => {
     const ta = textareaRef.current
     if (!ta) return
-    const start = ta.selectionStart
-    const end = ta.selectionEnd
+    ta.focus()
+    const [start, end] = savedSelection.current
     const content = formDataRef.current.content
     const selected = content.substring(start, end)
     const newText = content.substring(0, start) + prefix + selected + suffix + content.substring(end)
