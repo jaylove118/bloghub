@@ -169,7 +169,7 @@ export default function About() {
               {sending ? '发送中...' : '提交反馈'}
             </button>
             {isAuthenticated && (
-              <span className="text-xs text-gray-400 ml-3">已登录为 {user?.username}，反馈将关联到你的账户</span>
+              <p className="text-xs text-gray-400 mt-1">已登录为 <strong>{user?.username}</strong>，昵称和邮箱已自动填写</p>
             )}
           </form>
         )}
