@@ -3,6 +3,7 @@ import pool from '../config/db.js'
 import { authRequired, adminRequired } from '../middleware/auth.js'
 import { validate } from '../middleware/validate.js'
 import { AppError } from '../utils/errors.js'
+import { sendNewPostNotification } from '../utils/email.js'
 
 const router = Router()
 
@@ -168,7 +169,20 @@ router.post('/', authRequired, postValidation, async (req, res, next) => {
       [result.insertId]
     )
 
-    res.status(201).json({ post: parseJsonFields(rows[0]) })
+    const post = parseJsonFields(rows[0])
+    res.status(201).json({ post })
+
+    // Fire-and-forget: notify verified subscribers about new published post
+    if (status !== 'draft') {
+      const authorName = rows[0].author_name || '未知作者'
+      pool.query('SELECT email FROM subscribers WHERE is_verified = 1')
+        .then(([subs]) => {
+          subs.forEach(s => {
+            sendNewPostNotification(s.email, title, excerpt, finalSlug, authorName).catch(() => {})
+          })
+        })
+        .catch(() => {})
+    }
   } catch (err) {
     next(err)
   }
@@ -211,7 +225,20 @@ router.put('/:id', authRequired, postValidation, async (req, res, next) => {
       [id]
     )
 
-    res.json({ post: parseJsonFields(rows[0]) })
+    const post = parseJsonFields(rows[0])
+    res.json({ post })
+
+    // Notify subscribers when draft is published for the first time
+    if (existing[0].status === 'draft' && newStatus === 'published') {
+      const authorName = rows[0].author_name || '未知作者'
+      pool.query('SELECT email FROM subscribers WHERE is_verified = 1')
+        .then(([subs]) => {
+          subs.forEach(s => {
+            sendNewPostNotification(s.email, title, excerpt, newSlug, authorName).catch(() => {})
+          })
+        })
+        .catch(() => {})
+    }
   } catch (err) {
     next(err)
   }

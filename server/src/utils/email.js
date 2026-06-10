@@ -119,6 +119,50 @@ export function sendSubscribeConfirmation(email, token) {
   })
 }
 
+export function sendNewPostNotification(email, postTitle, postExcerpt, postSlug, authorName) {
+  const siteUrl = process.env.SITE_URL || 'http://localhost:5173'
+  const postUrl = `${siteUrl}/blog/${postSlug}`
+  return sendEmail({
+    to: email,
+    subject: `BlogHub 新文章：${postTitle}`,
+    html: `<!DOCTYPE html>
+<html lang="zh-CN">
+<head><meta charset="utf-8"></head>
+<body style="margin:0;padding:0;background:#f4f6f9;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f6f9;padding:40px 0">
+  <tr><td align="center">
+    <table width="480" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.06)">
+      <tr><td style="background:linear-gradient(135deg,#3b82f6,#6366f1);padding:32px 40px;text-align:center">
+        <h1 style="margin:0;color:#fff;font-size:24px;font-weight:700">BlogHub</h1>
+        <p style="margin:8px 0 0;color:rgba(255,255,255,.85);font-size:14px">新文章通知</p>
+      </td></tr>
+      <tr><td style="padding:40px">
+        <p style="margin:0 0 8px;color:#4b5563;font-size:15px">你好，</p>
+        <p style="margin:0 0 24px;color:#6b7280;font-size:14px;line-height:1.6">你订阅的 BlogHub 有新文章发布啦。</p>
+        <table width="100%" cellpadding="0" cellspacing="0" style="background:#f8fafc;border-radius:12px;margin-bottom:24px">
+          <tr><td style="padding:20px">
+            <h2 style="margin:0 0 8px;font-size:18px;color:#1e293b">${postTitle}</h2>
+            <p style="margin:0 0 12px;font-size:14px;color:#64748b;line-height:1.6">${postExcerpt || '点击查看全文'}</p>
+            <p style="margin:0;font-size:13px;color:#94a3b8">作者：${authorName}</p>
+          </td></tr>
+        </table>
+        <table width="100%" cellpadding="0" cellspacing="0">
+          <tr><td align="center">
+            <a href="${postUrl}" style="display:inline-block;background:#3b82f6;color:#fff;text-decoration:none;padding:14px 40px;border-radius:9999px;font-size:15px;font-weight:600">阅读全文</a>
+          </td></tr>
+        </table>
+      </td></tr>
+      <tr><td style="border-top:1px solid #e5e7eb;padding:20px 40px;text-align:center">
+        <p style="margin:0 0 8px;color:#9ca3af;font-size:12px">不想再收到此类邮件？<a href="${siteUrl}" style="color:#3b82f6">取消订阅</a></p>
+        <p style="margin:0;color:#9ca3af;font-size:12px">BlogHub — 分享你的想法</p>
+      </td></tr>
+    </table>
+  </td></tr>
+</table>
+</body></html>`,
+  })
+}
+
 export function sendCommentNotification(email, postTitle, commenterName) {
   const siteUrl = process.env.SITE_URL || 'http://localhost:5173'
   return sendEmail({
