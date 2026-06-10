@@ -1,10 +1,10 @@
 <div align="center">
-  <img src="https://img.shields.io/badge/version-1.1.0-blue?style=flat-square" alt="Version">
+  <img src="https://img.shields.io/badge/version-1.2.0-blue?style=flat-square" alt="Version">
   <img src="https://img.shields.io/badge/React-18-61DAFB?logo=react&style=flat-square" alt="React">
   <img src="https://img.shields.io/badge/Vite-5-646CFF?logo=vite&style=flat-square" alt="Vite">
   <img src="https://img.shields.io/badge/Tailwind-3-06B6D4?logo=tailwindcss&style=flat-square" alt="Tailwind">
   <img src="https://img.shields.io/badge/Express-4-000000?logo=express&style=flat-square" alt="Express">
-  <img src="https://img.shields.io/badge/MySQL-8-4479A1?logo=mysql&style=flat-square" alt="MySQL">
+  <img src="https://img.shields.io/badge/TiDB-Serverless-DD4B39?style=flat-square" alt="TiDB">
   <img src="https://img.shields.io/badge/license-MIT-green?style=flat-square" alt="License">
 </div>
 
@@ -98,10 +98,10 @@
 | 构建 | Vite 5 | 开发/构建 |
 | 样式 | Tailwind CSS 3 | 原子化 CSS + 暗色模式 |
 | 后端 | Express 4 | REST API + 中间件 |
-| 数据库 | MySQL 8 | 数据持久化 + FULLTEXT 搜索 |
+| 数据库 | TiDB Cloud (MySQL 兼容) | Serverless 自动扩缩 |
 | 认证 | JWT + bcryptjs | Token 认证 + 密码哈希 |
 | 邮件 | Nodemailer | 验证码/重置密码 |
-| 图片 | Sharp + Multer | 上传/缩略图/WebP |
+| 图片 | Cloudinary + Multer | 云存储/CDN/自动优化 |
 | 高亮 | highlight.js | 代码语法着色 |
 | 测试 | Vitest | 单元 + E2E 测试 |
 | 文档 | Swagger UI | API 交互式文档 |
@@ -114,7 +114,6 @@
 ### 环境要求
 
 - Node.js ≥ 18
-- MySQL ≥ 8.0
 
 ### 1. 克隆项目
 
@@ -123,31 +122,18 @@ git clone https://github.com/Jaylove118/bloghub.git
 cd bloghub
 ```
 
-### 2. 初始化数据库
-
-```bash
-mysql -u root -p -e "CREATE DATABASE IF NOT EXISTS bloghub CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci"
-mysql -u root -p bloghub < server/init.sql
-
-# 执行迁移（按顺序）
-cd server
-for f in migrations/0*.sql; do
-  mysql -u root -p bloghub < "$f"
-done
-cd ..
-```
-
-### 3. 配置环境变量
+### 2. 配置环境变量
 
 在 `server/` 目录创建 `.env`：
 
 ```env
-# 数据库
-DB_HOST=localhost
-DB_PORT=3306
-DB_USER=root
-DB_PASSWORD=你的密码
+# 数据库 (TiDB Cloud)
+DB_HOST=gateway01.ap-northeast-1.prod.aws.tidbcloud.com
+DB_PORT=4000
+DB_USER=你的TiDB用户名
+DB_PASSWORD=你的TiDB密码
 DB_NAME=bloghub
+DB_SSL=true
 
 # 安全
 JWT_SECRET=生成一个随机字符串（openssl rand -hex 32）
@@ -159,24 +145,31 @@ GITHUB_CLIENT_SECRET=
 GOOGLE_CLIENT_ID=
 GOOGLE_CLIENT_SECRET=
 
-# 邮件（可选，用于验证码/重置密码）
+# Cloudinary 图片云存储（可选）
+CLOUDINARY_CLOUD_NAME=
+CLOUDINARY_API_KEY=
+CLOUDINARY_API_SECRET=
+
+# 邮件（可选，用于验证码/重置密码/订阅推送）
 SMTP_HOST=smtp.qq.com
-SMTP_PORT=587
+SMTP_PORT=465
+SMTP_SECURE=true
 SMTP_USER=你的邮箱
 SMTP_PASS=SMTP 授权码
 
 # 站点
 SITE_URL=http://localhost:5173
+ALLOWED_ORIGINS=http://localhost:5173
 ```
 
-### 4. 安装依赖
+### 3. 安装依赖
 
 ```bash
 npm install
 cd server && npm install && cd ..
 ```
 
-### 5. 启动
+### 4. 启动
 
 ```bash
 # 终端 1：后端（端口 3001）
@@ -188,7 +181,7 @@ npm run dev
 
 浏览器访问 `http://localhost:5173`
 
-### 6. 运行测试
+### 5. 运行测试
 
 ```bash
 npm test                    # 前端 42 用例
@@ -212,7 +205,8 @@ bloghub/
 │   │   ├── ReadingProgress.jsx   # 阅读进度条 + 回到顶部
 │   │   ├── ShareButtons.jsx      # 社交分享 + 代码复制
 │   │   ├── SyntaxHighlight.jsx   # 代码语法高亮
-│   │   ├── RelatedPosts.jsx      # 相关文章推荐
+│   │   ├── RelatedPosts.jsx      # 相关文章推荐（标签交集优先）
+│   │   ├── Skeleton.jsx          # 骨架屏加载态
 │   │   └── SubscribeForm.jsx     # 邮件订阅表单
 │   ├── pages/                    # 页面（10+个）
 │   │   ├── Home.jsx              # 首页（精选 Hero + 全部/精选 Tab）
@@ -256,11 +250,12 @@ bloghub/
 │   │   │   ├── posts.js          # 文章（CRUD/标签/版本/精选/置顶）
 │   │   │   ├── comments.js       # 评论（嵌套回复/点赞/通知）
 │   │   │   ├── users.js          # 用户
-│   │   │   ├── upload.js         # 图片上传（Sharp 缩略图/WebP）
+│   │   │   ├── upload.js         # 图片上传（Cloudinary 云存储）
 │   │   │   ├── notifications.js  # 通知
 │   │   │   ├── subscribers.js    # 邮件订阅
 │   │   │   └── feedback.js       # 用户反馈
 │   │   ├── utils/
+│   │   │   ├── cloudinary.js     # Cloudinary 上传/列表/删除
 │   │   │   ├── email.js          # Nodemailer 邮件发送
 │   │   │   └── errors.js         # AppError 自定义错误类
 │   │   └── __tests__/            # 后端测试
@@ -332,8 +327,8 @@ bloghub/
 
 | 方法 | 路径 | 说明 | 认证 |
 |:-----|:-----|:-----|:----:|
-| POST | `/subscribe` | 订阅 | |
-| GET | `/verify?token=` | 验证邮箱 | |
+| POST | `/subscribe` | 订阅（即时生效） | |
+| GET | `/status` | 当前用户订阅状态 | ✓ |
 | POST | `/unsubscribe` | 退订 | |
 | GET | `/` | 订阅者列表（仅管理员） | ✓ |
 
@@ -369,7 +364,7 @@ bloghub/
 | `comments` | 评论 | content, parent_id, likes (JSON) |
 | `notifications` | 通知 | type, actor_id, post_id, is_read |
 | `post_revisions` | 版本历史 | post_id, title, content, revised_by |
-| `subscribers` | 邮件订阅 | email, is_verified, verify_token |
+| `subscribers` | 邮件订阅 | email, is_verified, created_at |
 | `analytics_views` | 访问统计 | post_id, viewer_ip, referrer, user_agent |
 | `feedbacks` | 用户反馈 | name, email, type, content, user_id |
 | `email_verifications` | 邮箱验证码 | email, code, expires_at |
@@ -378,13 +373,13 @@ bloghub/
 
 ## 部署
 
-项目已部署在 [Railway](https://railway.app)，推送 `master` 分支自动触发构建部署。
+项目已部署在 [Railway](https://railway.app) → **[bloghub-jay.up.railway.app](https://bloghub-jay.up.railway.app)**，推送 `master` 分支自动触发构建部署。
 
 ### 部署到 Railway
 
 1. Fork 本仓库
 2. 在 Railway 新建项目 → Deploy from GitHub repo
-3. 添加 MySQL 插件
+3. 添加 TiDB Cloud 数据库（或使用 Railway MySQL 插件）
 4. 设置环境变量（参考上方配置表）
 5. Railway 自动检测 `railway.toml` 并构建部署
 
