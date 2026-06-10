@@ -157,6 +157,7 @@ export const api = {
       if (filters.tags) params.set('tags', filters.tags)
       if (filters.search) params.set('search', filters.search)
       if (filters.authorId) params.set('authorId', filters.authorId)
+      if (filters.featured) params.set('featured', 'true')
       if (filters.page) params.set('page', filters.page)
       if (filters.limit) params.set('limit', filters.limit)
       const qs = params.toString()

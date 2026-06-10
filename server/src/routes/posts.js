@@ -35,7 +35,7 @@ function generateSlug(title) {
 
 router.get('/', async (req, res, next) => {
   try {
-    const { category, tag, search, authorId, page, limit, status } = req.query
+    const { category, tag, search, authorId, page, limit, status, featured } = req.query
     const pageNum = Math.max(1, parseInt(page) || 1)
     const limitNum = Math.min(50, Math.max(1, parseInt(limit) || 20))
     const offset = (pageNum - 1) * limitNum
@@ -43,6 +43,9 @@ router.get('/', async (req, res, next) => {
     let where = ' WHERE 1=1'
     const params = []
 
+    if (featured === 'true') {
+      where += ' AND p.is_pinned = 1'
+    }
     if (category && category !== 'all') {
       where += ' AND p.category = ?'
       params.push(category)

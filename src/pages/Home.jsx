@@ -14,6 +14,7 @@ export default function Home() {
   const [featuredPost, setFeaturedPost] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [tab, setTab] = useState('latest')
 
   useSEO({ title: 'BlogHub - 全功能博客平台', description: '加入我们，分享你的想法和经验。支持 Markdown 写作、社区互动的全功能博客平台。' })
 
@@ -21,9 +22,12 @@ export default function Home() {
     const fetchPosts = async () => {
       try {
         setError(null)
-        const { posts: data } = await api.posts.getAll({ limit: 20 })
+        setLoading(true)
+        const opts = { limit: 20 }
+        if (tab === 'featured') opts.featured = true
+        const { posts: data } = await api.posts.getAll(opts)
         setPosts(data)
-        if (data.length > 0) {
+        if (tab === 'latest' && data.length > 0) {
           const pinned = data.find(p => p.isPinned)
           setFeaturedPost(pinned || data[0])
         }
@@ -34,7 +38,7 @@ export default function Home() {
       }
     }
     fetchPosts()
-  }, [])
+  }, [tab])
 
   const handleToggleFeature = async (e, postId) => {
     e.preventDefault()
@@ -99,7 +103,7 @@ export default function Home() {
         </div>
       )}
 
-      {featuredPost && (
+      {tab === 'latest' && featuredPost && (
         <section className="mb-12">
           <div className="flex items-center gap-2 mb-4">
             <Sparkles className="text-amber-500" size={20} />
@@ -162,9 +166,29 @@ export default function Home() {
 
       <section className="mb-12">
         <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-2">
-            <TrendingUp className="text-primary" size={20} />
-            <h2 className="text-xl font-bold">最新文章</h2>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <TrendingUp className="text-primary" size={20} />
+              <h2 className="text-xl font-bold">{tab === 'featured' ? '精选文章' : '最新文章'}</h2>
+            </div>
+            <div className="flex bg-gray-100 dark:bg-gray-700 rounded-lg p-0.5">
+              <button
+                onClick={() => setTab('latest')}
+                className={`px-3 py-1.5 rounded-md text-sm font-medium transition ${
+                  tab === 'latest' ? 'bg-white dark:bg-gray-600 text-primary shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
+                }`}
+              >
+                全部
+              </button>
+              <button
+                onClick={() => setTab('featured')}
+                className={`px-3 py-1.5 rounded-md text-sm font-medium transition flex items-center gap-1 ${
+                  tab === 'featured' ? 'bg-white dark:bg-gray-600 text-primary shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
+                }`}
+              >
+                <Sparkles size={14} /> 精选
+              </button>
+            </div>
           </div>
           <Link to="/blogs" className="text-primary hover:underline">
             查看全部 →
@@ -183,7 +207,7 @@ export default function Home() {
           </div>
         ) : (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {posts.slice(0, 6).map((post) => (
+            {posts.map((post) => (
               <Link
                 key={post.id}
                 to={`/blog/${post.id}`}
