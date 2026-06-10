@@ -212,7 +212,7 @@ export default function BlogList() {
                     </span>
                     {post.isPinned && (
                       <span className="px-1.5 py-0.5 rounded text-xs bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300 flex items-center gap-0.5">
-                        <Pin size={10} /> 置顶
+                        <Pin size={10} /> 精选
                       </span>
                     )}
                     {post.tags?.slice(0, 2).map((t) => (

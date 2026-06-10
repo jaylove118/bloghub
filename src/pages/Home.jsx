@@ -120,7 +120,7 @@ export default function Home() {
                   </span>
                   {featuredPost.isPinned && (
                     <span className="px-2 py-1 rounded-full text-xs bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300 flex items-center gap-0.5">
-                      <Pin size={12} /> 置顶
+                      <Pin size={12} /> 精选
                     </span>
                   )}
                   <span className="text-sm text-gray-500 dark:text-gray-400 flex items-center gap-1">
@@ -197,7 +197,7 @@ export default function Home() {
                     </span>
                     {post.isPinned && (
                       <span className="px-1.5 py-0.5 rounded text-xs bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300 flex items-center gap-0.5">
-                        <Pin size={10} /> 置顶
+                        <Pin size={10} /> 精选
                       </span>
                     )}
                     {post.tags?.slice(0, 2).map((tag) => (

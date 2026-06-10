@@ -233,7 +233,7 @@ export default function BlogDetail() {
             </span>
             {post.isPinned && (
               <span className="px-2 py-1 rounded-full text-xs bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300 flex items-center gap-1">
-                <Pin size={12} /> 置顶
+                <Pin size={12} /> 精选
               </span>
             )}
             {post.tags?.map((tag) => (
@@ -308,16 +308,18 @@ export default function BlogDetail() {
 
             {canManage && (
               <div className="flex items-center gap-2 flex-wrap">
-                <button
-                  onClick={handlePin}
-                  className={`flex items-center gap-1 px-3 py-2 rounded-full text-sm transition ${
-                    post.isPinned ? 'bg-amber-50 dark:bg-amber-900/30 text-amber-500' : 'bg-gray-100 dark:bg-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
-                  }`}
-                  title={post.isPinned ? '取消置顶' : '置顶'}
-                >
-                  <Pin size={16} fill={post.isPinned ? 'currentColor' : 'none'} />
-                  <span className="hidden sm:inline">{post.isPinned ? '已置顶' : '置顶'}</span>
-                </button>
+                {isAdmin && (
+                  <button
+                    onClick={handlePin}
+                    className={`flex items-center gap-1 px-3 py-2 rounded-full text-sm transition ${
+                      post.isPinned ? 'bg-amber-50 dark:bg-amber-900/30 text-amber-500' : 'bg-gray-100 dark:bg-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                    }`}
+                    title={post.isPinned ? '取消精选' : '精选'}
+                  >
+                    <Pin size={16} fill={post.isPinned ? 'currentColor' : 'none'} />
+                    <span className="hidden sm:inline">{post.isPinned ? '已精选' : '精选'}</span>
+                  </button>
+                )}
                 <Link
                   to={`/editor/${id}`}
                   className="flex items-center gap-1 px-3 py-2 bg-gray-100 dark:bg-gray-700 dark:text-gray-300 rounded-full hover:bg-gray-200 dark:hover:bg-gray-600 transition text-sm"

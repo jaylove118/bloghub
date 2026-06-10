@@ -336,12 +336,11 @@ router.get('/tags/all', async (_req, res) => {
   }
 })
 
-router.put('/:id/pin', authRequired, async (req, res, next) => {
+router.put('/:id/pin', authRequired, adminRequired, async (req, res, next) => {
   try {
     const { id } = req.params
-    const [existing] = await pool.query('SELECT author_id, is_pinned FROM posts WHERE id = ?', [id])
+    const [existing] = await pool.query('SELECT is_pinned FROM posts WHERE id = ?', [id])
     if (existing.length === 0) throw new AppError(404, '文章不存在')
-    if (existing[0].author_id !== req.userId && req.userRole !== 'admin') throw new AppError(403, '无权操作他人文章')
 
     const newPinned = existing[0].is_pinned ? 0 : 1
     await pool.query('UPDATE posts SET is_pinned = ? WHERE id = ?', [newPinned, id])

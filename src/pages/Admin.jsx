@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link, Navigate } from 'react-router-dom'
-import { Eye, Users, FileText, MessageCircle, TrendingUp, Mail, Trash2 } from 'lucide-react'
+import { Eye, Users, FileText, MessageCircle, TrendingUp, Mail, Trash2, Pin } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { useSEO } from '../hooks/useSEO'
 import LoadingSpinner from '../components/LoadingSpinner'
@@ -101,6 +101,13 @@ export default function Admin() {
       await api.posts.delete(postId)
       setAdminPosts(prev => prev.filter(p => p.id !== postId))
       setPostsTotal(prev => prev - 1)
+    } catch {}
+  }
+
+  const handleAdminToggleFeature = async (postId) => {
+    try {
+      const newPinned = await api.posts.pin(postId)
+      setAdminPosts(prev => prev.map(p => p.id === postId ? { ...p, isPinned: newPinned } : p))
     } catch {}
   }
 
@@ -341,6 +348,7 @@ export default function Admin() {
                   <th className="text-left py-2 px-2">标题</th>
                   <th className="text-left py-2 px-2">作者</th>
                   <th className="text-left py-2 px-2">状态</th>
+                  <th className="text-center py-2 px-2">精选</th>
                   <th className="text-left py-2 px-2">日期</th>
                   <th className="text-right py-2 px-2">操作</th>
                 </tr>
@@ -358,6 +366,15 @@ export default function Admin() {
                       }`}>
                         {post.status === 'published' ? '已发布' : '草稿'}
                       </span>
+                    </td>
+                    <td className="py-2 px-2 text-center">
+                      <button
+                        onClick={() => handleAdminToggleFeature(post.id)}
+                        className={`transition p-1 rounded ${post.isPinned ? 'text-amber-500 hover:text-amber-600' : 'text-gray-300 hover:text-amber-400'}`}
+                        title={post.isPinned ? '取消精选' : '设为精选'}
+                      >
+                        <Pin size={16} fill={post.isPinned ? 'currentColor' : 'none'} />
+                      </button>
                     </td>
                     <td className="py-2 px-2 text-gray-500 text-xs">
                       {new Date(post.createdAt).toLocaleDateString('zh-CN')}
