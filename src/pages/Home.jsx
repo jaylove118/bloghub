@@ -29,7 +29,7 @@ export default function Home() {
         setPosts(data)
         if (tab === 'latest' && data.length > 0) {
           const pinned = data.find(p => p.isPinned)
-          setFeaturedPost(pinned || data[0])
+          setFeaturedPost(pinned || null)
         }
       } catch (err) {
         setError('加载失败，请稍后重试')
