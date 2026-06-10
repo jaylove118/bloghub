@@ -68,14 +68,22 @@ export default function Editor() {
     const start = ta.selectionStart
     const end = ta.selectionEnd
     const content = ta.value
+
+    let actualPrefix = prefix
+    if (['# ', '## ', '### ', '- ', '> '].includes(prefix)) {
+      if (start > 0 && content[start - 1] !== '\n') {
+        actualPrefix = '\n' + prefix
+      }
+    }
+
     const selected = content.substring(start, end)
-    const newText = content.substring(0, start) + prefix + selected + suffix + content.substring(end)
+    const newText = content.substring(0, start) + actualPrefix + selected + suffix + content.substring(end)
     handleChange({ content: newText })
     requestAnimationFrame(() => {
       ta.focus()
       const pos = selected
-        ? start + prefix.length + selected.length + suffix.length
-        : start + prefix.length
+        ? start + actualPrefix.length + selected.length + suffix.length
+        : start + actualPrefix.length
       ta.setSelectionRange(pos, pos)
     })
   }
