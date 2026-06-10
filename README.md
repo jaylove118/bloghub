@@ -5,6 +5,7 @@
   <img src="https://img.shields.io/badge/Tailwind-3-06B6D4?logo=tailwindcss&style=flat-square" alt="Tailwind">
   <img src="https://img.shields.io/badge/Express-4-000000?logo=express&style=flat-square" alt="Express">
   <img src="https://img.shields.io/badge/TiDB-Serverless-DD4B39?style=flat-square" alt="TiDB">
+  <img src="https://img.shields.io/badge/Cloudinary-3448C5?logo=cloudinary&style=flat-square" alt="Cloudinary">
   <img src="https://img.shields.io/badge/license-MIT-green?style=flat-square" alt="License">
 </div>
 
@@ -13,7 +14,7 @@
 <h1 align="center">BlogHub</h1>
 
 <p align="center">
-  <b>全功能博客平台</b> · React + Express + MySQL 全栈
+  <b>全功能博客平台</b> · React + Express + TiDB + Cloudinary 全栈
 </p>
 
 <p align="center">
@@ -69,13 +70,13 @@
 - **RSS 2.0** — `/api/rss` 标准 Feed
 - **Sitemap** — `/api/sitemap.txt` 自动生成
 - **全文搜索** — MySQL FULLTEXT + ngram 中文分词
-- **邮件订阅** — 邮箱订阅/验证/退订，首页 + Footer 双入口
+- **邮件订阅** — 即时订阅/新文章推送/退订，首页 + Footer 双入口
 
 ### 🛡️ 管理与运营
 
 - **管理后台** — 文章/用户/评论/访问量/反馈五维面板
 - **数据分析** — 7 天流量趋势图 + 流量来源 TOP 10
-- **媒体库** — 网格浏览、上传、删除，Sharp 自动生成缩略图 + WebP
+- **媒体库** — Cloudinary 云存储，网格浏览、上传、删除，自动 CDN 分发
 - **订阅管理** — 后台查看订阅者列表，支持删除
 - **用户反馈** — 关于页提交反馈，后台分类查看（建议/Bug/好评/其他）
 
@@ -100,7 +101,7 @@
 | 后端 | Express 4 | REST API + 中间件 |
 | 数据库 | TiDB Cloud (MySQL 兼容) | Serverless 自动扩缩 |
 | 认证 | JWT + bcryptjs | Token 认证 + 密码哈希 |
-| 邮件 | Nodemailer | 验证码/重置密码 |
+| 邮件 | Nodemailer (QQ SMTP) | 验证码/重置密码/订阅推送/评论通知 |
 | 图片 | Cloudinary + Multer | 云存储/CDN/自动优化 |
 | 高亮 | highlight.js | 代码语法着色 |
 | 测试 | Vitest | 单元 + E2E 测试 |
@@ -156,6 +157,7 @@ SMTP_PORT=465
 SMTP_SECURE=true
 SMTP_USER=你的邮箱
 SMTP_PASS=SMTP 授权码
+SMTP_FROM=你的邮箱
 
 # 站点
 SITE_URL=http://localhost:5173
@@ -262,6 +264,8 @@ bloghub/
 │   ├── migrations/               # 数据库迁移（12 个 SQL）
 │   ├── uploads/                  # 上传文件目录
 │   └── init.sql                  # 完整建表 SQL
+├── public/
+│   └── favicon.svg               # 网站图标
 ├── docs/                         # 设计文档
 ├── package.json
 ├── vite.config.js                # Vite 配置 + API 代理
