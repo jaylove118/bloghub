@@ -48,7 +48,7 @@ export function parseInline(text: string, options: Required<ParseOptions>): stri
 
   if (options.enableImage) {
     result = result.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (_m: string, alt: string, url: string) =>
-      '<img src="' + sanitizeUrl(url) + '" alt="' + alt + '" class="prose-img" />'
+      '<a href="' + sanitizeUrl(url) + '" class="prose-img-link" target="_blank"><img src="' + sanitizeUrl(url) + '" alt="' + alt + '" class="prose-img" loading="lazy" /></a>'
     )
   }
 

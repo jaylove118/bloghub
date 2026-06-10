@@ -27,6 +27,7 @@ export default function BlogDetail() {
   const [liking, setLiking] = useState(false)
   const [commentLoading, setCommentLoading] = useState(false)
   const [error, setError] = useState(null)
+  const [lightboxSrc, setLightboxSrc] = useState(null)
 
   const isAuthor = user?.id === post?.authorId
   const isAdmin = user?.role === 'admin'
@@ -271,7 +272,17 @@ export default function BlogDetail() {
           <div className="flex gap-8">
             <div className="flex-1 min-w-0">
               <SyntaxHighlight>
-                <div className="prose max-w-none mb-8" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(parseMarkdown(displayContent)) }} />
+                <div
+                  className="prose max-w-none mb-8"
+                  dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(parseMarkdown(displayContent)) }}
+                  onClick={(e) => {
+                    const link = e.target.closest('.prose-img-link')
+                    if (link) {
+                      e.preventDefault()
+                      setLightboxSrc(link.href)
+                    }
+                  }}
+                />
               </SyntaxHighlight>
               <CodeCopyButton />
             </div>
@@ -389,6 +400,12 @@ export default function BlogDetail() {
       </section>
 
       <RelatedPosts postId={post.id} category={post.category} tags={post.tags} currentPostId={id} />
+
+      {lightboxSrc && (
+        <div className="lightbox-overlay" onClick={() => setLightboxSrc(null)}>
+          <img src={lightboxSrc} alt="" onClick={(e) => e.stopPropagation()} />
+        </div>
+      )}
     </div>
   )
 }

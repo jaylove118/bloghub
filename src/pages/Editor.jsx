@@ -170,6 +170,42 @@ export default function Editor() {
     handleChange({ tags: formData.tags.filter(t => t !== tagToRemove) })
   }
 
+  const handleContentImage = async () => {
+    const input = document.createElement('input')
+    input.type = 'file'
+    input.accept = 'image/*'
+    input.onchange = async () => {
+      const file = input.files[0]
+      if (!file) return
+      const form = new FormData()
+      form.append('image', file)
+      try {
+        const res = await fetch('/api/upload', {
+          method: 'POST',
+          headers: { Authorization: 'Bearer ' + localStorage.getItem(TOKEN_KEY) },
+          body: form,
+        })
+        const data = await res.json()
+        if (res.ok) {
+          const ta = textareaRef.current
+          if (ta) {
+            ta.focus()
+            const start = ta.selectionStart
+            const content = ta.value
+            const imgMd = '\n![图片](' + data.url + ')\n'
+            const newContent = content.substring(0, start) + imgMd + content.substring(start)
+            handleChange({ content: newContent })
+          }
+        } else {
+          alert(data.message || '上传失败')
+        }
+      } catch {
+        alert('图片上传失败')
+      }
+    }
+    input.click()
+  }
+
   const handleImageUpload = async (e) => {
     const file = e.target.files[0]
     if (!file) return
@@ -514,6 +550,7 @@ export default function Editor() {
                   <button type="button" onMouseDown={(e) => { e.preventDefault(); insertMarkdown('**', '**') }} className="p-1.5 hover:bg-gray-200 dark:hover:bg-gray-700 rounded font-bold select-none" title="粗体"><Bold size={16} /></button>
                   <button type="button" onMouseDown={(e) => { e.preventDefault(); insertMarkdown('*', '*') }} className="p-1.5 hover:bg-gray-200 dark:hover:bg-gray-700 rounded italic select-none" title="斜体"><Italic size={16} /></button>
                   <button type="button" onMouseDown={(e) => { e.preventDefault(); insertMarkdown('`', '`') }} className="p-1.5 hover:bg-gray-200 dark:hover:bg-gray-700 rounded select-none" title="行内代码"><Code size={16} /></button>
+                  <button type="button" onClick={handleContentImage} className="p-1.5 hover:bg-gray-200 dark:hover:bg-gray-700 rounded select-none text-primary" title="插入图片"><Image size={16} /></button>
                   <button type="button" onMouseDown={(e) => { e.preventDefault(); insertMarkdown('> ', '') }} className="p-1.5 hover:bg-gray-200 dark:hover:bg-gray-700 rounded select-none" title="引用"><Quote size={16} /></button>
                   <button type="button" onMouseDown={(e) => { e.preventDefault(); insertMarkdown('- ', '') }} className="p-1.5 hover:bg-gray-200 dark:hover:bg-gray-700 rounded select-none" title="列表"><List size={16} /></button>
                   <button type="button" onMouseDown={(e) => { e.preventDefault(); insertMarkdown('[', '](url)') }} className="p-1.5 hover:bg-gray-200 dark:hover:bg-gray-700 rounded select-none" title="链接"><span className="text-xs font-mono">A</span></button>
