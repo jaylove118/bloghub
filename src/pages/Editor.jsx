@@ -6,6 +6,7 @@ import { ArrowLeft, Eye, Image, X, RotateCcw, Check, FileText, Send, Bold, Itali
 import { parseMarkdown } from '../lib/index'
 import { categoryOptions, POPULAR_TAGS, TAG_CATEGORY_MAP } from '../utils/constants'
 import { handleError } from '../utils/errors'
+import AIPanel from '../components/AIPanel'
 import DOMPurify from 'dompurify'
 
 const DRAFT_KEY = 'bloghub_editor_draft'
@@ -71,6 +72,7 @@ export default function Editor() {
   const [saveError, setSaveError] = useState(null)
   const [previewLightbox, setPreviewLightbox] = useState(null)
   const [metaOpen, setMetaOpen] = useState(false)
+  const [selectedText, setSelectedText] = useState('')
 
   const draftTimerRef = useRef(null)
   const textareaRef = useRef(null)
@@ -99,6 +101,22 @@ export default function Editor() {
       const pos = selected
         ? start + actualPrefix.length + selected.length + suffix.length
         : start + actualPrefix.length
+      ta.setSelectionRange(pos, pos)
+    })
+  }
+
+  const handleAIInsert = (text) => {
+    const ta = textareaRef.current
+    if (!ta) return
+    ta.focus()
+    const start = ta.selectionStart
+    const end = ta.selectionEnd
+    const contentVal = ta.value
+    const newContent = contentVal.substring(0, start) + text + contentVal.substring(end)
+    handleChange({ content: newContent })
+    requestAnimationFrame(() => {
+      ta.focus()
+      const pos = start + text.length
       ta.setSelectionRange(pos, pos)
     })
   }
@@ -568,12 +586,29 @@ export default function Editor() {
                 <span className="text-xs text-gray-400 dark:text-gray-500 ml-2 hidden sm:inline">选中文本后点击按钮包裹格式</span>
               </div>
 
+              <AIPanel
+                title={formData.title}
+                content={formData.content}
+                category={formData.category}
+                selectedText={selectedText}
+                onInsert={handleAIInsert}
+                textareaRef={textareaRef}
+              />
+
               {/* Editor area */}
               <div className={`${splitView ? 'flex flex-col md:flex-row' : ''}`}>
                 <textarea
                   ref={textareaRef}
                   value={formData.content}
                   onChange={(e) => handleChange({ content: e.target.value })}
+                  onMouseUp={() => {
+                    const ta = textareaRef.current
+                    if (ta) setSelectedText(ta.value.substring(ta.selectionStart, ta.selectionEnd))
+                  }}
+                  onKeyUp={() => {
+                    const ta = textareaRef.current
+                    if (ta) setSelectedText(ta.value.substring(ta.selectionStart, ta.selectionEnd))
+                  }}
                   placeholder="开始写作..."
                   maxLength={100000}
                   className={`${splitView ? 'w-full md:w-1/2 md:border-r border-gray-100 dark:border-gray-700' : 'w-full'} h-[500px] p-5 focus:outline-none resize-none font-mono text-sm bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 placeholder:text-gray-300 dark:placeholder:text-gray-600 leading-relaxed`}
