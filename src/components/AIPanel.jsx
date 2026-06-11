@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { api } from '../context/api'
-import { Sparkles, ChevronDown, ChevronUp, Copy, Check, Loader2 } from 'lucide-react'
+import { Sparkles, ChevronDown, ChevronUp, Copy, Check, Loader2, Send } from 'lucide-react'
 
 const OPERATIONS = [
   { key: 'continue', label: 'AI 续写', desc: '根据上文续写下一段', icon: '✍️', needsSelection: false },
@@ -15,6 +15,7 @@ export default function AIPanel({ title, content, category, selectedText, onInse
   const [result, setResult] = useState('')
   const [error, setError] = useState('')
   const [copied, setCopied] = useState(false)
+  const [prompt, setPrompt] = useState('')
   const resultRef = useRef(null)
 
   useEffect(() => {
@@ -96,6 +97,73 @@ export default function AIPanel({ title, content, category, selectedText, onInse
     }
   }
 
+  const handleFreeGenerate = async () => {
+    if (generating || !prompt.trim()) return
+    setGenerating(true)
+    setResult('')
+    setError('')
+
+    try {
+      const token = localStorage.getItem('bloghub_token')
+      const response = await fetch('/api/ai/generate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          operation: 'free',
+          content: prompt,
+          context: { title, category },
+        }),
+      })
+
+      if (!response.ok) {
+        const data = await response.json()
+        throw new Error(data.message || '请求失败')
+      }
+
+      const reader = response.body.getReader()
+      const decoder = new TextDecoder()
+      let buffer = ''
+
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+
+        buffer += decoder.decode(value, { stream: true })
+        const lines = buffer.split('\n')
+        buffer = lines.pop() || ''
+
+        for (const line of lines) {
+          const trimmed = line.trim()
+          if (!trimmed || !trimmed.startsWith('data: ')) continue
+          const data = trimmed.slice(6)
+          if (data === '[DONE]') continue
+          try {
+            const parsed = JSON.parse(data)
+            if (parsed.error) {
+              setError(parsed.error)
+            } else if (parsed.text) {
+              setResult(prev => prev + parsed.text)
+            }
+          } catch {}
+        }
+      }
+    } catch (err) {
+      setError(err.message || 'AI 服务连接失败')
+    } finally {
+      setGenerating(false)
+    }
+  }
+
+  const handleFreeKeyDown = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault()
+      handleFreeGenerate()
+    }
+  }
+
   const handleInsert = () => {
     if (!result.trim()) return
     onInsert(result)
@@ -125,6 +193,28 @@ export default function AIPanel({ title, content, category, selectedText, onInse
 
       {open && (
         <div className="px-4 pb-4 space-y-3 animate-slide-up">
+          {/* 自由对话输入 */}
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={prompt}
+              onChange={(e) => setPrompt(e.target.value)}
+              onKeyDown={handleFreeKeyDown}
+              disabled={generating}
+              placeholder="告诉 AI 你想写什么，例如：帮我写一篇关于 Python 入门的文章开头"
+              className="flex-1 px-3 py-2 border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg text-sm focus:outline-none focus:border-primary disabled:opacity-50"
+            />
+            <button
+              type="button"
+              onClick={handleFreeGenerate}
+              disabled={generating || !prompt.trim()}
+              className="px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-secondary transition disabled:opacity-50 flex items-center gap-1.5 shrink-0"
+            >
+              {generating ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
+              生成
+            </button>
+          </div>
+
           <div className="flex flex-wrap gap-2">
             {OPERATIONS.map(op => (
               <button

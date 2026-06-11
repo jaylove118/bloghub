@@ -42,6 +42,13 @@ const PROMPTS = {
 - 字数控制在100-200字
 - 抓住文章核心观点
 - 直接输出摘要文字，不要加任何前缀说明`,
+
+  free: `你是一个专业的博客写作助手。用户会描述想要写什么内容，请根据用户的描述直接生成文章内容。
+要求：
+- 直接输出生成的文章内容，不要加"好的"、"以下是"等前缀
+- 内容要有实质性，结构清晰
+- 保持自然流畅的中文写作风格
+- 如果用户没有指定字数，默认写300-500字`,
 }
 
 async function streamAI(res, systemPrompt, userContent, model = 'deepseek-chat') {
@@ -141,6 +148,8 @@ router.post('/generate', authRequired, aiLimiter, async (req, res) => {
     userContent = `请为以下主题生成文章大纲：\n\n标题：${context?.title || '无标题'}\n主题分类：${context?.category || 'tech'}\n\n${content ? `当前内容概要：\n${content.slice(0, 500)}` : ''}`
   } else if (operation === 'summary') {
     userContent = `请为以下文章生成摘要：\n\n标题：${context?.title || '无标题'}\n\n正文：\n${content.slice(0, 3000)}`
+  } else if (operation === 'free') {
+    userContent = content
   }
 
   await streamAI(res, systemPrompt, userContent)
